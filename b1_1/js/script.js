@@ -1,23 +1,20 @@
-const hamburgerButton =
-  document.querySelector(".hamburger-button");
+/* Declaration */
 
-const navMenu =
-  document.querySelector(".nav-menu");
-
-const pageLinks =
-  document.querySelectorAll('a[href^="#"]');
-
-const scrollTopButton =
-  document.querySelector("#scroll-top-button");
-
-const themeButton =
-  document.querySelector(".theme-button");
-
-const header =
-  document.querySelector(".header");
-
-const revealElements =
-  document.querySelectorAll(".reveal");
+const hamburgerButton = document.querySelector(".hamburger-button");
+const navMenu = document.querySelector(".nav-menu");
+const pageLinks = document.querySelectorAll('a[href^="#"]');
+const scrollTopButton = document.querySelector("#scroll-top-button");
+const themeButton = document.querySelector(".theme-button");
+const header = document.querySelector(".header");
+const revealElements = document.querySelectorAll(".reveal");
+const contactForm = document.querySelector("#contact-form");
+const nameInput = document.querySelector("#name");
+const emailInput = document.querySelector("#email");
+const messageInput = document.querySelector("#message");
+const nameError = document.querySelector("#name-error");
+const emailError = document.querySelector("#email-error");
+const messageError = document.querySelector("#message-error");
+const formSuccess = document.querySelector("#form-success");
 
 
 /* Theme */
@@ -30,9 +27,7 @@ const applyTheme = (theme) => {
   );
 
   themeButton.textContent =
-    theme === "dark"
-      ? "Light"
-      : "Dark";
+    theme === "dark" ? "Light" : "Dark";
 };
 
 
@@ -41,9 +36,7 @@ const savedTheme =
 
 
 let currentTheme =
-  savedTheme === "dark"
-    ? "dark"
-    : "light";
+  savedTheme === "dark" ? "dark" : "light";
 
 
 applyTheme(currentTheme);
@@ -52,9 +45,7 @@ applyTheme(currentTheme);
 themeButton.addEventListener("click", () => {
 
   currentTheme =
-    currentTheme === "light"
-      ? "dark"
-      : "light";
+    currentTheme === "light" ? "dark" : "light";
 
   applyTheme(currentTheme);
 
@@ -72,8 +63,7 @@ hamburgerButton.addEventListener("click", () => {
 
   navMenu.classList.toggle("active");
 
-  const isOpen =
-    navMenu.classList.contains("active");
+  const isOpen = navMenu.classList.contains("active");
 
   hamburgerButton.setAttribute(
     "aria-expanded",
@@ -97,8 +87,7 @@ pageLinks.forEach((link) => {
       return;
     }
 
-    const targetSection =
-      document.querySelector(targetId);
+    const targetSection = document.querySelector(targetId);
 
     if (!targetSection) {
       return;
@@ -186,3 +175,47 @@ const observer =
 revealElements.forEach((element) => {
   observer.observe(element);
 });
+
+
+/* Contact Form */
+
+const formState = {
+    name: "",
+    email: "",
+    message: "",
+
+    errors: {
+        name: "",
+        email: "",
+        message: ""
+    }
+};
+
+const validateName = (value) => {
+    if (value.trim() === "") {
+        return "이름을 입력해주세요.";
+    }
+    return "";
+};
+
+const validateEmail = (value) => {
+    const trimmedValue = value.trim();
+
+    if (trimmedValue === "") {
+        return "이메일을 입력해주세요.";
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(trimmedValue)) {
+        return "올바른 이메일 형식을 입력해주세요."
+    }
+    return "";
+}
+
+const validateMessage = (value) => {
+    if (value.trim() === "") {
+        return "메시지를 입력해주세요.";
+    }
+    return "";
+};

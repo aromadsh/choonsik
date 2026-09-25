@@ -308,11 +308,14 @@
               id="name"
               name="name"
               placeholder="이름을 입력해주세요"
+              required
+              aria-describedby="name-error"
             >
 
             <p
               id="name-error"
               class="error-message"
+              aria-live="polite"
             ></p>
 
           </div>
@@ -329,11 +332,14 @@
               id="email"
               name="email"
               placeholder="example@email.com"
+              required
+              aria-describedby="email-error"
             >
 
             <p
               id="email-error"
               class="error-message"
+              aria-live="polite"
             ></p>
 
           </div>
@@ -350,11 +356,14 @@
               name="message"
               rows="6"
               placeholder="메시지를 입력해주세요"
+              required
+              aria-describedby="message-error"
             ></textarea>
 
             <p
               id="message-error"
               class="error-message"
+              aria-live="polite"
             ></p>
 
           </div>
@@ -370,6 +379,7 @@
           <p
             id="form-success"
             class="success-message"
+            aria-live="polite"
           ></p>
 
         </form>
