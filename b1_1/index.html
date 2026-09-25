@@ -19,6 +19,7 @@
 <body>
 
   <header class="header">
+
     <nav class="navbar">
 
       <a href="#hero" class="logo">
@@ -26,6 +27,7 @@
       </a>
 
       <ul class="nav-menu">
+
         <li>
           <a href="#about" class="nav-link">
             About
@@ -49,6 +51,7 @@
             Contact
           </a>
         </li>
+
       </ul>
 
       <div class="nav-actions">
@@ -65,6 +68,7 @@
           type="button"
           class="hamburger-button"
           aria-label="메뉴 열기"
+          aria-expanded="false"
         >
           ☰
         </button>
@@ -72,12 +76,16 @@
       </div>
 
     </nav>
+
   </header>
 
 
   <main>
 
-    <section id="hero" class="hero">
+    <section
+      id="hero"
+      class="hero"
+    >
 
       <div class="hero-content">
 
@@ -118,7 +126,10 @@
     </section>
 
 
-    <section id="about" class="section">
+    <section
+      id="about"
+      class="section reveal"
+    >
 
       <div class="section-container">
 
@@ -154,7 +165,10 @@
     </section>
 
 
-    <section id="skills" class="section">
+    <section
+      id="skills"
+      class="section reveal"
+    >
 
       <div class="section-container">
 
@@ -162,29 +176,12 @@
 
         <ul class="skills-list">
 
-          <li class="skill-item">
-            HTML
-          </li>
-
-          <li class="skill-item">
-            CSS
-          </li>
-
-          <li class="skill-item">
-            JavaScript
-          </li>
-
-          <li class="skill-item">
-            Python
-          </li>
-
-          <li class="skill-item">
-            SQL
-          </li>
-
-          <li class="skill-item">
-            Git
-          </li>
+          <li class="skill-item">HTML</li>
+          <li class="skill-item">CSS</li>
+          <li class="skill-item">JavaScript</li>
+          <li class="skill-item">Python</li>
+          <li class="skill-item">SQL</li>
+          <li class="skill-item">Git</li>
 
         </ul>
 
@@ -193,129 +190,191 @@
     </section>
 
 
-    <section id="projects" class="section">
+    <section
+      id="projects"
+      class="section reveal"
+    >
+
       <div class="section-container">
 
         <h2>Projects</h2>
 
         <p class="section-description">
-            진행한 프로젝트와 GitHub 저장소를 소개합니다.
+          진행한 프로젝트와 GitHub 저장소를 소개합니다.
         </p>
 
         <div class="projects-grid">
 
-            <article class="project-card">
+          <article class="project-card">
+
             <h3>Portfolio Website</h3>
 
             <p>
-                HTML, CSS, JavaScript를 활용한
-                반영형 포트폴리오 웹사이트 입니다.
+              HTML, CSS, JavaScript를 활용한
+              반응형 포트폴리오 웹사이트입니다.
             </p>
 
             <p class="project-language">
-                JavaScript
+              JavaScript
             </p>
 
-            <a href="#" class="project-link">
-                GitHub 보기
+            <a
+              href="#"
+              class="project-link"
+            >
+              GitHub 보기
             </a>
-            </article>
 
-            <article class="project-card">
-                <h3>Data Analysis</h3>
+          </article>
 
-                <p>
-                    Python을 활용한 데이터 분석 프로젝트입니다.
-                </p>
 
-                <p class="project-language">
-                    Python
-                </p>
+          <article class="project-card">
 
-                <a href="#" class="project-link">
-                    GitHub 보기
-                </a>
-            </article>
+            <h3>Data Analysis</h3>
 
-            <article class="project-card">
-                <h3>Web Project</h3>
+            <p>
+              Python을 활용한 데이터 분석 프로젝트입니다.
+            </p>
 
-                <p>
-                    웹 개발 학습을 위한 프로젝트입니다.
-                </p>
+            <p class="project-language">
+              Python
+            </p>
 
-                <p class="project-language">
-                    HTML
-                </p>
+            <a
+              href="#"
+              class="project-link"
+            >
+              GitHub 보기
+            </a>
 
-                <a href="#" class="project-link">
-                    GitHub 보기
-                </a>
-            </article>           
+          </article>
+
+
+          <article class="project-card">
+
+            <h3>Web Project</h3>
+
+            <p>
+              웹 개발 학습을 위한 프로젝트입니다.
+            </p>
+
+            <p class="project-language">
+              HTML
+            </p>
+
+            <a
+              href="#"
+              class="project-link"
+            >
+              GitHub 보기
+            </a>
+
+          </article>
 
         </div>
 
       </div>
+
     </section>
 
 
-    <section id="contact" class="section">
-        
-        <div class="section-container">
-            
-            <h2>Contact</h2>
-            
-            <p class="section-description">
-                문의사항이 있다면 아래 폼을 통해 메시지를 남겨주세요.
-            </p>
-            
-            <from id="contact" class="contact-from" novalidate>
+    <section
+      id="contact"
+      class="section reveal"
+    >
 
-                <div class="form-group">
+      <div class="section-container">
 
-                    <label for="name">
-                        이름
-                    </label>
+        <h2>Contact</h2>
 
-                    <input type="text" id="name" name="name" placeholder="이름을 입력해주세요.">
+        <p class="section-description">
+          문의사항이 있다면 아래 폼을 통해 메시지를 남겨주세요.
+        </p>
 
-                    <p id="name-error" class="error-message"></p>
+        <form
+          id="contact-form"
+          class="contact-form"
+          novalidate
+        >
 
-                </div>
+          <div class="form-group">
 
-                <div class="form-group">
+            <label for="name">
+              이름
+            </label>
 
-                    <label for="email">
-                        이메일
-                    </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              placeholder="이름을 입력해주세요"
+            >
 
-                    <input type="email" id="email" name="email" placeholder="example@gmail.com">
+            <p
+              id="name-error"
+              class="error-message"
+            ></p>
 
-                    <p id="email-error" class="error-message"></p>
+          </div>
 
-                </div>
 
-                <div class="form-group">
+          <div class="form-group">
 
-                    <label for="message">
-                        이메일
-                    </label>
+            <label for="email">
+              이메일
+            </label>
 
-                    <textarea id="message" name="message" rows="6" placeholder="메시지를 입력해주세요"></textarea>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="example@email.com"
+            >
 
-                    <p id="message-error" class="error-message"></p>
+            <p
+              id="email-error"
+              class="error-message"
+            ></p>
 
-                </div>
+          </div>
 
-                <button type="submit" class="submit-button">
-                    보내기
-                </button>
 
-                <p id="form-success" class="success-message"></p>
+          <div class="form-group">
 
-            </from>
-      
-        </div>
+            <label for="message">
+              메시지
+            </label>
+
+            <textarea
+              id="message"
+              name="message"
+              rows="6"
+              placeholder="메시지를 입력해주세요"
+            ></textarea>
+
+            <p
+              id="message-error"
+              class="error-message"
+            ></p>
+
+          </div>
+
+
+          <button
+            type="submit"
+            class="submit-button"
+          >
+            보내기
+          </button>
+
+          <p
+            id="form-success"
+            class="success-message"
+          ></p>
+
+        </form>
+
+      </div>
 
     </section>
 
@@ -325,26 +384,48 @@
   <footer class="footer">
 
     <div class="footer-container">
-        <p>
-            © 2026 Portfolio
-        </p>
 
-        <ul class="social-links">
-            <li>
-                <a href="#" target="_blank" rel="noopener noreferrer">
-                    GitHub
-                </a>
-            </li>
+      <p>
+        © 2026 Portfolio
+      </p>
 
-            <li>
-                <a href="#" target="_blank" rel="noopener noreferrer">
-                    Blog
-                </a>
-            </li>
-        </ul>
-        
+      <ul class="social-links">
+
+        <li>
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Blog
+          </a>
+        </li>
+
+      </ul>
+
     </div>
+
   </footer>
+
+
+  <button
+    type="button"
+    id="scroll-top-button"
+    class="scroll-top-button"
+    aria-label="페이지 맨 위로 이동"
+  >
+    ↑
+  </button>
 
 </body>
 
