@@ -74,9 +74,7 @@ body {
 
 .header {
   position: sticky;
-
   top: 0;
-
   z-index: 1000;
 
   width: 100%;
@@ -92,8 +90,7 @@ body {
 
 
 .header.scrolled {
-  background-color:
-    var(--color-header-scrolled);
+  background-color: var(--color-header-scrolled);
 
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.08);
@@ -493,11 +490,6 @@ body {
 }
 
 
-.project-language {
-  font-weight: bold;
-}
-
-
 .project-link {
   display: inline-block;
 
@@ -577,6 +569,7 @@ body {
 .form-group input.input-error:focus,
 .form-group textarea.input-error:focus {
   outline-color: var(--color-error);
+
   border-color: var(--color-error);
 }
 

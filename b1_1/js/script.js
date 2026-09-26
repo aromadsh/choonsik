@@ -18,8 +18,6 @@ const formSuccess = document.querySelector("#form-success");
 const projectsGrid = document.querySelector("#projects-grid");
 const projectsStatus = document.querySelector("#projects-status");
 const retryButton = document.querySelector("#retry-button");
-const githubUsername = "aromadsh";
-const githubApiUrl = `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=12&type=owner`;
 
 
 /* Theme */
@@ -32,7 +30,9 @@ const applyTheme = (theme) => {
   );
 
   themeButton.textContent =
-    theme === "dark" ? "Light" : "Dark";
+    theme === "dark"
+      ? "Light"
+      : "Dark";
 };
 
 
@@ -41,7 +41,9 @@ const savedTheme =
 
 
 let currentTheme =
-  savedTheme === "dark" ? "dark" : "light";
+  savedTheme === "dark"
+    ? "dark"
+    : "light";
 
 
 applyTheme(currentTheme);
@@ -50,7 +52,9 @@ applyTheme(currentTheme);
 themeButton.addEventListener("click", () => {
 
   currentTheme =
-    currentTheme === "light" ? "dark" : "light";
+    currentTheme === "light"
+      ? "dark"
+      : "light";
 
   applyTheme(currentTheme);
 
@@ -68,7 +72,8 @@ hamburgerButton.addEventListener("click", () => {
 
   navMenu.classList.toggle("active");
 
-  const isOpen = navMenu.classList.contains("active");
+  const isOpen =
+    navMenu.classList.contains("active");
 
   hamburgerButton.setAttribute(
     "aria-expanded",
@@ -92,7 +97,8 @@ pageLinks.forEach((link) => {
       return;
     }
 
-    const targetSection = document.querySelector(targetId);
+    const targetSection =
+      document.querySelector(targetId);
 
     if (!targetSection) {
       return;
@@ -185,147 +191,246 @@ revealElements.forEach((element) => {
 /* Contact Form */
 
 const formState = {
+  name: "",
+  email: "",
+  message: "",
+
+  errors: {
     name: "",
     email: "",
-    message: "",
-
-    errors: {
-        name: "",
-        email: "",
-        message: ""
-    }
+    message: ""
+  }
 };
+
 
 const validateName = (value) => {
-    if (value.trim() === "") {
-        return "이름을 입력해주세요.";
-    }
-    return "";
+
+  if (value.trim() === "") {
+    return "이름을 입력해주세요.";
+  }
+
+  return "";
+
 };
+
 
 const validateEmail = (value) => {
-    const trimmedValue = value.trim();
 
-    if (trimmedValue === "") {
-        return "이메일을 입력해주세요.";
-    }
+  const trimmedValue =
+    value.trim();
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailPattern.test(trimmedValue)) {
-        return "올바른 이메일 형식을 입력해주세요."
-    }
-    return "";
+  if (trimmedValue === "") {
+    return "이메일을 입력해주세요.";
+  }
+
+
+  const emailPattern =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+  if (!emailPattern.test(trimmedValue)) {
+    return "올바른 이메일 형식을 입력해주세요.";
+  }
+
+
+  return "";
+
 };
+
 
 const validateMessage = (value) => {
-    if (value.trim() === "") {
-        return "메시지를 입력해주세요.";
-    }
-    return "";
+
+  if (value.trim() === "") {
+    return "메시지를 입력해주세요.";
+  }
+
+  return "";
+
 };
+
 
 const renderFieldError = (
   input,
   errorElement,
   message
 ) => {
+
   errorElement.textContent =
-  message;
+    message;
 
   input.classList.toggle(
     "input-error",
     message !== ""
   );
+
 };
 
-nameInput.addEventListener("input", (event) => {
-  formState.name = event.target.value;
 
-  formState.errors.name = validateName(formState.name);
+nameInput.addEventListener(
+  "input",
+  (event) => {
 
-  renderFieldError(
-    nameInput,
-    nameError,
-    formState.errors.name
-  );
-  formSuccess.textContent = "";
-});
+    formState.name =
+      event.target.value;
 
-emailInput.addEventListener("input", (event) => {
-  formState.email = event.target.value;
+    formState.errors.name =
+      validateName(
+        formState.name
+      );
 
-  formState.errors.email = validateEmail(formState.email);
+    renderFieldError(
+      nameInput,
+      nameError,
+      formState.errors.name
+    );
 
-  renderFieldError(
-    emailInput,
-    emailError,
-    formState.errors.email
-  );
-  formSuccess.textContent = "";
-});
-
-messageInput.addEventListener("input", (event) => {
-  formState.message = event.target.value;
-
-  formState.errors.message = validateMessage(formState.message);
-
-  renderFieldError(
-    messageInput,
-    messageError,
-    formState.errors.message
-  );
-  formSuccess.textContent = "";
-});
-
-contactForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  formState.name = nameInput.value;
-  formState.email = emailInput.value;
-  formState.message = messageInput.value;
-
-  formState.errors.name = validateName(formState.name);
-  formState.errors.email = validateEmail(formState.email);
-  formState.errors.message = validateMessage(formState.message);
-
-  renderFieldError(
-    nameInput,
-    nameError,
-    formState.errors.name
-  );
-
-  renderFieldError(
-    emailInput,
-    emailError,
-    formState.errors.email
-  );
-
-  renderFieldError(
-    messageInput,
-    messageError,
-    formState.errors.message
-  );
-
-  const hasError = Object.values(formState.errors).some((error) => {
-    return error !=="";
-  });
-
-  if (hasError) {
     formSuccess.textContent = "";
-    return;
+
   }
-  formSuccess.textContent = "메시지가 정상적으로 확인되었습니다.";
-
-  contactForm.reset();
-
-  formState.name = "";
-  formState.email = "";
-  formState.message = "";
-});
+);
 
 
-/* GitHub API & Project */
+emailInput.addEventListener(
+  "input",
+  (event) => {
+
+    formState.email =
+      event.target.value;
+
+    formState.errors.email =
+      validateEmail(
+        formState.email
+      );
+
+    renderFieldError(
+      emailInput,
+      emailError,
+      formState.errors.email
+    );
+
+    formSuccess.textContent = "";
+
+  }
+);
+
+
+messageInput.addEventListener(
+  "input",
+  (event) => {
+
+    formState.message =
+      event.target.value;
+
+    formState.errors.message =
+      validateMessage(
+        formState.message
+      );
+
+    renderFieldError(
+      messageInput,
+      messageError,
+      formState.errors.message
+    );
+
+    formSuccess.textContent = "";
+
+  }
+);
+
+
+contactForm.addEventListener(
+  "submit",
+  (event) => {
+
+    event.preventDefault();
+
+
+    formState.name =
+      nameInput.value;
+
+    formState.email =
+      emailInput.value;
+
+    formState.message =
+      messageInput.value;
+
+
+    formState.errors.name =
+      validateName(
+        formState.name
+      );
+
+    formState.errors.email =
+      validateEmail(
+        formState.email
+      );
+
+    formState.errors.message =
+      validateMessage(
+        formState.message
+      );
+
+
+    renderFieldError(
+      nameInput,
+      nameError,
+      formState.errors.name
+    );
+
+    renderFieldError(
+      emailInput,
+      emailError,
+      formState.errors.email
+    );
+
+    renderFieldError(
+      messageInput,
+      messageError,
+      formState.errors.message
+    );
+
+
+    const hasError =
+      Object.values(
+        formState.errors
+      ).some((error) => {
+        return error !== "";
+      });
+
+
+    if (hasError) {
+
+      formSuccess.textContent = "";
+
+      return;
+
+    }
+
+
+    formSuccess.textContent =
+      "메시지가 정상적으로 확인되었습니다.";
+
+
+    contactForm.reset();
+
+
+    formState.name = "";
+    formState.email = "";
+    formState.message = "";
+
+  }
+);
+
+
+/* GitHub API */
+
+const githubUsername = "aromadsh";
+
+
+const githubApiUrl =
+  `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=4&type=owner`;
+
 
 const projectState = {
   status: "loading",
@@ -333,73 +438,119 @@ const projectState = {
   error: ""
 };
 
+
 const renderProjects = () => {
+
   projectsGrid.innerHTML = "";
+
   retryButton.hidden = true;
 
+
   if (projectState.status === "loading") {
-    projectsStatus.textContent = "GitHub 저장소를 불러오는 중입니다.";
+
+    projectsStatus.textContent =
+      "GitHub 저장소를 불러오는 중입니다.";
 
     return;
+
   }
+
 
   if (projectState.status === "error") {
-    projectsStatus.textContent = projectState.error;
+
+    projectsStatus.textContent =
+      projectState.error;
 
     retryButton.hidden = false;
-    
+
     return;
+
   }
+
+
+  if (projectState.status === "empty") {
+
+    projectsStatus.textContent =
+      "표시할 공개 저장소가 없습니다.";
+
+    return;
+
+  }
+
 
   if (projectState.status === "success") {
-    projectsStatus.textContent = `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
 
-    const projectCards = projectState.repos.map((repo) => {
+    projectsStatus.textContent =
+      `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
 
-      const {name, description, language, stargazers_count, html_url} = repo;
 
-      return `
+    const projectCards =
+      projectState.repos.map((repo) => {
+
+        const {
+          name,
+          description,
+          language,
+          stargazers_count,
+          html_url
+        } = repo;
+
+
+        return `
           <article class="project-card">
 
-          <h3>${name}</h3>
+            <h3>${name}</h3>
 
-          <p class="project-description">
-            ${description ?? "프로젝트 설명이 없습니다."}
-          </p>
+            <p class="project-description">
+              ${description ?? "프로젝트 설명이 없습니다."}
+            </p>
 
-          <div class="project-meta">
+            <div class="project-meta">
 
-            <span>
-              ${language ?? "언어 정보 없음"}
-            </span>
+              <span>
+                ${language ?? "언어 정보 없음"}
+              </span>
 
-            <span>
-              Star ${stargazers_count}
-            </span>
+              <span>
+                Star ${stargazers_count}
+              </span>
 
-          </div>
+            </div>
 
-          <a
-            href="${html_url}"
-            class="project-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub 보기
-          </a>
+            <a
+              href="${html_url}"
+              class="project-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub 보기
+            </a>
 
-        </article>
-      `;
-    });
-    projectsGrid.innerHTML = projectCards.join("");
+          </article>
+        `;
+
+      });
+
+
+    projectsGrid.innerHTML =
+      projectCards.join("");
+
   }
+
 };
+
 
 const fetchRepositories = async () => {
 
-  projectState.status = "loading";
-  projectState.repos = [];
-  projectState.error = "";
+  projectState.status =
+    "loading";
+
+  projectState.repos =
+    [];
+
+  projectState.error =
+    "";
+
 
   renderProjects();
 
@@ -421,45 +572,73 @@ const fetchRepositories = async () => {
     if (!response.ok) {
 
       if (response.status === 403) {
+
         throw new Error(
           "GitHub API 요청 한도를 초과했거나 접근이 제한되었습니다."
         );
+
       }
 
 
       if (response.status === 404) {
+
         throw new Error(
           "GitHub 사용자를 찾을 수 없습니다."
         );
+
       }
 
 
       throw new Error(
         `GitHub API 요청에 실패했습니다. 상태 코드: ${response.status}`
       );
+
     }
-    const repos = await response.json();
 
-    const filteredRepos = repos.filter((repo) => {
-      return !repo.fork;
-    });
 
-    projectState.repos = filteredRepos;
+    const repos =
+      await response.json();
 
-    projectState.status = repos.length === 0 ? "empty" : "success";
+
+    const filteredRepos =
+      repos.filter((repo) => {
+        return !repo.fork;
+      });
+
+
+    projectState.repos =
+      filteredRepos;
+
+
+    projectState.status =
+      filteredRepos.length === 0
+        ? "empty"
+        : "success";
 
   } catch (error) {
 
-    projectState.status = "error";
+    projectState.status =
+      "error";
 
-    projectState.error = error.message;
+    projectState.error =
+      error.message;
 
   }
+
+
   renderProjects();
+
 };
 
-retryButton.addEventListener("click", () => {
-  fetchRepositories();
-});
+
+retryButton.addEventListener(
+  "click",
+  () => {
+
+    fetchRepositories();
+
+  }
+);
+
 
 fetchRepositories();
