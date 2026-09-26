@@ -1,23 +1,97 @@
 /* Declaration */
 
-const hamburgerButton = document.querySelector(".hamburger-button");
-const navMenu = document.querySelector(".nav-menu");
-const pageLinks = document.querySelectorAll('a[href^="#"]');
-const scrollTopButton = document.querySelector("#scroll-top-button");
-const themeButton = document.querySelector(".theme-button");
-const header = document.querySelector(".header");
-const revealElements = document.querySelectorAll(".reveal");
-const contactForm = document.querySelector("#contact-form");
-const nameInput = document.querySelector("#name");
-const emailInput = document.querySelector("#email");
-const messageInput = document.querySelector("#message");
-const nameError = document.querySelector("#name-error");
-const emailError = document.querySelector("#email-error");
-const messageError = document.querySelector("#message-error");
-const formSuccess = document.querySelector("#form-success");
-const projectsGrid = document.querySelector("#projects-grid");
-const projectsStatus = document.querySelector("#projects-status");
-const retryButton = document.querySelector("#retry-button");
+const hamburgerButton =
+  document.querySelector(".hamburger-button");
+
+const navMenu =
+  document.querySelector(".nav-menu");
+
+const pageLinks =
+  document.querySelectorAll('a[href^="#"]');
+
+const scrollTopButton =
+  document.querySelector("#scroll-top-button");
+
+const themeButton =
+  document.querySelector(".theme-button");
+
+const header =
+  document.querySelector(".header");
+
+const revealElements =
+  document.querySelectorAll(".reveal");
+
+const contactForm =
+  document.querySelector("#contact-form");
+
+const nameInput =
+  document.querySelector("#name");
+
+const emailInput =
+  document.querySelector("#email");
+
+const messageInput =
+  document.querySelector("#message");
+
+const nameError =
+  document.querySelector("#name-error");
+
+const emailError =
+  document.querySelector("#email-error");
+
+const messageError =
+  document.querySelector("#message-error");
+
+const formSuccess =
+  document.querySelector("#form-success");
+
+const projectsGrid =
+  document.querySelector("#projects-grid");
+
+const projectsStatus =
+  document.querySelector("#projects-status");
+
+const retryButton =
+  document.querySelector("#retry-button");
+
+const projectFilters =
+  document.querySelector("#project-filters");
+
+const typingText =
+  document.querySelector("#typing-text");
+
+
+/* Typing Effect */
+
+const typingMessage =
+  "데이터를 분석하고\n서비스로 구현합니다.";
+
+let typingIndex = 0;
+
+const typingSpeed = 80;
+
+
+const typeText = () => {
+
+  if (typingIndex < typingMessage.length) {
+
+    typingText.textContent +=
+      typingMessage[typingIndex];
+
+    typingIndex += 1;
+
+
+    setTimeout(
+      typeText,
+      typingSpeed
+    );
+
+  }
+
+};
+
+
+typeText();
 
 
 /* Theme */
@@ -425,23 +499,82 @@ contactForm.addEventListener(
 
 /* GitHub API */
 
-const githubUsername = "aromadsh";
+const githubUsername =
+  "aromadsh";
 
 
 const githubApiUrl =
-  `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=4&type=owner`;
+  `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=6&type=owner`;
 
 
 const projectState = {
   status: "loading",
   repos: [],
-  error: ""
+  error: "",
+  filter: "all"
+};
+
+
+const renderFilterButtons = () => {
+
+  const languages = [
+    ...new Set(
+      projectState.repos
+        .map((repo) => {
+          return repo.language;
+        })
+        .filter((language) => {
+          return language !== null;
+        })
+    )
+  ];
+
+
+  const filters = [
+    "all",
+    ...languages
+  ];
+
+
+  const filterButtons =
+    filters.map((language) => {
+
+      const buttonText =
+        language === "all"
+          ? "All"
+          : language;
+
+
+      const activeClass =
+        projectState.filter === language
+          ? " active"
+          : "";
+
+
+      return `
+        <button
+          type="button"
+          class="filter-button${activeClass}"
+          data-language="${language}"
+        >
+          ${buttonText}
+        </button>
+      `;
+
+    });
+
+
+  projectFilters.innerHTML =
+    filterButtons.join("");
+
 };
 
 
 const renderProjects = () => {
 
   projectsGrid.innerHTML = "";
+
+  projectFilters.innerHTML = "";
 
   retryButton.hidden = true;
 
@@ -480,12 +613,33 @@ const renderProjects = () => {
 
   if (projectState.status === "success") {
 
-    projectsStatus.textContent =
-      `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
+    renderFilterButtons();
+
+
+    const visibleRepos =
+      projectState.filter === "all"
+        ? projectState.repos
+        : projectState.repos.filter((repo) => {
+            return repo.language ===
+              projectState.filter;
+          });
+
+
+    if (projectState.filter === "all") {
+
+      projectsStatus.textContent =
+        `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
+
+    } else {
+
+      projectsStatus.textContent =
+        `${projectState.filter} 프로젝트 ${visibleRepos.length}개를 표시합니다.`;
+
+    }
 
 
     const projectCards =
-      projectState.repos.map((repo) => {
+      visibleRepos.map((repo) => {
 
         const {
           name,
@@ -540,6 +694,31 @@ const renderProjects = () => {
 };
 
 
+projectFilters.addEventListener(
+  "click",
+  (event) => {
+
+    const clickedButton =
+      event.target.closest(
+        ".filter-button"
+      );
+
+
+    if (!clickedButton) {
+      return;
+    }
+
+
+    projectState.filter =
+      clickedButton.dataset.language;
+
+
+    renderProjects();
+
+  }
+);
+
+
 const fetchRepositories = async () => {
 
   projectState.status =
@@ -550,6 +729,9 @@ const fetchRepositories = async () => {
 
   projectState.error =
     "";
+
+  projectState.filter =
+    "all";
 
 
   renderProjects();
