@@ -387,6 +387,43 @@ body {
 
 /* Projects */
 
+.projects-status {
+  margin-bottom: 20px;
+
+  color: var(--color-text-muted);
+
+  line-height: 1.6;
+}
+
+
+.retry-button {
+  margin-bottom: var(--spacing-medium);
+
+  padding: 10px 18px;
+
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-small);
+
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+
+  font: inherit;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  transition:
+    background-color var(--transition-speed) ease,
+    color var(--transition-speed) ease;
+}
+
+
+.retry-button:hover {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+
 .projects-grid {
   display: grid;
 
@@ -398,6 +435,9 @@ body {
 
 
 .project-card {
+  display: flex;
+  flex-direction: column;
+
   padding: var(--spacing-medium);
 
   border-radius: var(--radius-medium);
@@ -430,6 +470,26 @@ body {
 
 .project-card p {
   line-height: 1.7;
+}
+
+
+.project-description {
+  color: var(--color-text-muted);
+}
+
+
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 12px;
+
+  margin-top: auto;
+  margin-bottom: 16px;
+
+  color: var(--color-text-muted);
+
+  font-size: 14px;
 }
 
 
@@ -508,6 +568,19 @@ body {
 }
 
 
+.form-group input.input-error,
+.form-group textarea.input-error {
+  border-color: var(--color-error);
+}
+
+
+.form-group input.input-error:focus,
+.form-group textarea.input-error:focus {
+  outline-color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+
 .error-message {
   min-height: 20px;
 
@@ -554,18 +627,6 @@ body {
   transform: translateY(-2px);
 
   opacity: 0.9;
-}
-
-.form-group input.input-error,
-.form-group textarea.input-error {
-  border-color: var(--color-error);
-}
-
-
-.form-group input.input-error:focus,
-.form-group textarea.input-error:focus {
-  outline-color: var(--color-error);
-  border-color: var(--color-error);
 }
 
 

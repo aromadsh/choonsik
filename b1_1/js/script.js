@@ -15,6 +15,11 @@ const nameError = document.querySelector("#name-error");
 const emailError = document.querySelector("#email-error");
 const messageError = document.querySelector("#message-error");
 const formSuccess = document.querySelector("#form-success");
+const projectsGrid = document.querySelector("#projects-grid");
+const projectsStatus = document.querySelector("#projects-status");
+const retryButton = document.querySelector("#retry-button");
+const githubUsername = "aromadsh";
+const githubApiUrl = `https://api.github.com/users/${githubUsername}/repos?sort=updated&per_page=12&type=owner`;
 
 
 /* Theme */
@@ -211,7 +216,7 @@ const validateEmail = (value) => {
         return "올바른 이메일 형식을 입력해주세요."
     }
     return "";
-}
+};
 
 const validateMessage = (value) => {
     if (value.trim() === "") {
@@ -219,3 +224,242 @@ const validateMessage = (value) => {
     }
     return "";
 };
+
+const renderFieldError = (
+  input,
+  errorElement,
+  message
+) => {
+  errorElement.textContent =
+  message;
+
+  input.classList.toggle(
+    "input-error",
+    message !== ""
+  );
+};
+
+nameInput.addEventListener("input", (event) => {
+  formState.name = event.target.value;
+
+  formState.errors.name = validateName(formState.name);
+
+  renderFieldError(
+    nameInput,
+    nameError,
+    formState.errors.name
+  );
+  formSuccess.textContent = "";
+});
+
+emailInput.addEventListener("input", (event) => {
+  formState.email = event.target.value;
+
+  formState.errors.email = validateEmail(formState.email);
+
+  renderFieldError(
+    emailInput,
+    emailError,
+    formState.errors.email
+  );
+  formSuccess.textContent = "";
+});
+
+messageInput.addEventListener("input", (event) => {
+  formState.message = event.target.value;
+
+  formState.errors.message = validateMessage(formState.message);
+
+  renderFieldError(
+    messageInput,
+    messageError,
+    formState.errors.message
+  );
+  formSuccess.textContent = "";
+});
+
+contactForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  formState.name = nameInput.value;
+  formState.email = emailInput.value;
+  formState.message = messageInput.value;
+
+  formState.errors.name = validateName(formState.name);
+  formState.errors.email = validateEmail(formState.email);
+  formState.errors.message = validateMessage(formState.message);
+
+  renderFieldError(
+    nameInput,
+    nameError,
+    formState.errors.name
+  );
+
+  renderFieldError(
+    emailInput,
+    emailError,
+    formState.errors.email
+  );
+
+  renderFieldError(
+    messageInput,
+    messageError,
+    formState.errors.message
+  );
+
+  const hasError = Object.values(formState.errors).some((error) => {
+    return error !=="";
+  });
+
+  if (hasError) {
+    formSuccess.textContent = "";
+    return;
+  }
+  formSuccess.textContent = "메시지가 정상적으로 확인되었습니다.";
+
+  contactForm.reset();
+
+  formState.name = "";
+  formState.email = "";
+  formState.message = "";
+});
+
+
+/* GitHub API & Project */
+
+const projectState = {
+  status: "loading",
+  repos: [],
+  error: ""
+};
+
+const renderProjects = () => {
+  projectsGrid.innerHTML = "";
+  retryButton.hidden = true;
+
+  if (projectState.status === "loading") {
+    projectsStatus.textContent = "GitHub 저장소를 불러오는 중입니다.";
+
+    return;
+  }
+
+  if (projectState.status === "error") {
+    projectsStatus.textContent = projectState.error;
+
+    retryButton.hidden = false;
+    
+    return;
+  }
+
+  if (projectState.status === "success") {
+    projectsStatus.textContent = `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
+
+    const projectCards = projectState.repos.map((repo) => {
+
+      const {name, description, language, stargazers_count, html_url} = repo;
+
+      return `
+          <article class="project-card">
+
+          <h3>${name}</h3>
+
+          <p class="project-description">
+            ${description ?? "프로젝트 설명이 없습니다."}
+          </p>
+
+          <div class="project-meta">
+
+            <span>
+              ${language ?? "언어 정보 없음"}
+            </span>
+
+            <span>
+              Star ${stargazers_count}
+            </span>
+
+          </div>
+
+          <a
+            href="${html_url}"
+            class="project-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 보기
+          </a>
+
+        </article>
+      `;
+    });
+    projectsGrid.innerHTML = projectCards.join("");
+  }
+};
+
+const fetchRepositories = async () => {
+
+  projectState.status = "loading";
+  projectState.repos = [];
+  projectState.error = "";
+
+  renderProjects();
+
+
+  try {
+
+    const response =
+      await fetch(
+        githubApiUrl,
+        {
+          headers: {
+            Accept:
+              "application/vnd.github+json"
+          }
+        }
+      );
+
+
+    if (!response.ok) {
+
+      if (response.status === 403) {
+        throw new Error(
+          "GitHub API 요청 한도를 초과했거나 접근이 제한되었습니다."
+        );
+      }
+
+
+      if (response.status === 404) {
+        throw new Error(
+          "GitHub 사용자를 찾을 수 없습니다."
+        );
+      }
+
+
+      throw new Error(
+        `GitHub API 요청에 실패했습니다. 상태 코드: ${response.status}`
+      );
+    }
+    const repos = await response.json();
+
+    const filteredRepos = repos.filter((repo) => {
+      return !repo.fork;
+    });
+
+    projectState.repos = filteredRepos;
+
+    projectState.status = repos.length === 0 ? "empty" : "success";
+
+  } catch (error) {
+
+    projectState.status = "error";
+
+    projectState.error = error.message;
+
+  }
+  renderProjects();
+};
+
+retryButton.addEventListener("click", () => {
+  fetchRepositories();
+});
+
+fetchRepositories();
