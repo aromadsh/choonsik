@@ -45,6 +45,12 @@ const messageError =
 const formSuccess =
   document.querySelector("#form-success");
 
+const submitButton =
+  document.querySelector("#submit-button");
+
+const formSubmitError =
+  document.querySelector("#form-submit-error");
+
 const projectsGrid =
   document.querySelector("#projects-grid");
 
@@ -73,13 +79,15 @@ const typingSpeed = 80;
 
 const typeText = () => {
 
-  if (typingIndex < typingMessage.length) {
+  if (
+    typingIndex <
+    typingMessage.length
+  ) {
 
     typingText.textContent +=
       typingMessage[typingIndex];
 
     typingIndex += 1;
-
 
     setTimeout(
       typeText,
@@ -107,125 +115,205 @@ const applyTheme = (theme) => {
     theme === "dark"
       ? "Light"
       : "Dark";
+
+  themeButton.setAttribute(
+    "aria-label",
+    theme === "dark"
+      ? "라이트 모드로 전환"
+      : "다크 모드로 전환"
+  );
+
 };
+
+
+const systemThemeQuery =
+  window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  );
 
 
 const savedTheme =
   localStorage.getItem("theme");
 
 
+const getInitialTheme = () => {
+
+  if (
+    savedTheme === "dark" ||
+    savedTheme === "light"
+  ) {
+    return savedTheme;
+  }
+
+  if (systemThemeQuery.matches) {
+    return "dark";
+  }
+
+  return "light";
+
+};
+
+
 let currentTheme =
-  savedTheme === "dark"
-    ? "dark"
-    : "light";
+  getInitialTheme();
 
 
 applyTheme(currentTheme);
 
 
-themeButton.addEventListener("click", () => {
+themeButton.addEventListener(
+  "click",
+  () => {
 
-  currentTheme =
-    currentTheme === "light"
-      ? "dark"
-      : "light";
+    currentTheme =
+      currentTheme === "light"
+        ? "dark"
+        : "light";
 
-  applyTheme(currentTheme);
+    applyTheme(currentTheme);
 
-  localStorage.setItem(
-    "theme",
-    currentTheme
-  );
+    localStorage.setItem(
+      "theme",
+      currentTheme
+    );
 
-});
+  }
+);
 
 
-/* Hamburger Menu */
+systemThemeQuery.addEventListener(
+  "change",
+  (event) => {
 
-hamburgerButton.addEventListener("click", () => {
+    const userTheme =
+      localStorage.getItem("theme");
 
-  navMenu.classList.toggle("active");
+    if (userTheme) {
+      return;
+    }
 
-  const isOpen =
-    navMenu.classList.contains("active");
+    currentTheme =
+      event.matches
+        ? "dark"
+        : "light";
 
-  hamburgerButton.setAttribute(
-    "aria-expanded",
-    isOpen
-  );
+    applyTheme(currentTheme);
 
-});
+  }
+);
+
+
+/* Hamburger */
+
+hamburgerButton.addEventListener(
+  "click",
+  () => {
+
+    navMenu.classList.toggle(
+      "active"
+    );
+
+    const isOpen =
+      navMenu.classList.contains(
+        "active"
+      );
+
+    hamburgerButton.setAttribute(
+      "aria-expanded",
+      isOpen
+    );
+
+  }
+);
 
 
 /* Smooth Scroll */
 
 pageLinks.forEach((link) => {
 
-  link.addEventListener("click", (event) => {
+  link.addEventListener(
+    "click",
+    (event) => {
 
-    const targetId =
-      link.getAttribute("href");
+      const targetId =
+        link.getAttribute("href");
 
-    if (targetId === "#") {
+      if (targetId === "#") {
+        event.preventDefault();
+        return;
+      }
+
+      const targetSection =
+        document.querySelector(
+          targetId
+        );
+
+      if (!targetSection) {
+        return;
+      }
+
       event.preventDefault();
-      return;
+
+      targetSection.scrollIntoView({
+        behavior: "smooth"
+      });
+
+      navMenu.classList.remove(
+        "active"
+      );
+
+      hamburgerButton.setAttribute(
+        "aria-expanded",
+        "false"
+      );
+
+    }
+  );
+
+});
+
+
+/* Scroll */
+
+window.addEventListener(
+  "scroll",
+  () => {
+
+    if (window.scrollY >= 300) {
+      scrollTopButton.classList.add(
+        "show"
+      );
+    } else {
+      scrollTopButton.classList.remove(
+        "show"
+      );
     }
 
-    const targetSection =
-      document.querySelector(targetId);
-
-    if (!targetSection) {
-      return;
+    if (window.scrollY >= 60) {
+      header.classList.add(
+        "scrolled"
+      );
+    } else {
+      header.classList.remove(
+        "scrolled"
+      );
     }
 
-    event.preventDefault();
+  }
+);
 
-    targetSection.scrollIntoView({
+
+scrollTopButton.addEventListener(
+  "click",
+  () => {
+
+    window.scrollTo({
+      top: 0,
       behavior: "smooth"
     });
 
-    navMenu.classList.remove("active");
-
-    hamburgerButton.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-
-  });
-
-});
-
-
-/* Scroll Event */
-
-window.addEventListener("scroll", () => {
-
-  if (window.scrollY >= 300) {
-    scrollTopButton.classList.add("show");
-  } else {
-    scrollTopButton.classList.remove("show");
   }
-
-
-  if (window.scrollY >= 60) {
-    header.classList.add("scrolled");
-  } else {
-    header.classList.remove("scrolled");
-  }
-
-});
-
-
-/* Scroll Top */
-
-scrollTopButton.addEventListener("click", () => {
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
-
-});
+);
 
 
 /* Intersection Observer */
@@ -257,12 +345,29 @@ const observer =
   );
 
 
-revealElements.forEach((element) => {
-  observer.observe(element);
-});
+revealElements.forEach(
+  (element) => {
+
+    observer.observe(element);
+
+  }
+);
 
 
-/* Contact Form */
+/* EmailJS */
+
+const emailJsConfig = {
+  serviceId: "service_bhzyfn5",
+  templateId: "template_d0q2p81",
+  publicKey: "1SxldQp_tUwm6x1HI"
+};
+
+
+const emailJsApiUrl =
+  "https://api.emailjs.com/api/v1.0/email/send";
+
+
+/* Contact */
 
 const formState = {
   name: "",
@@ -293,20 +398,20 @@ const validateEmail = (value) => {
   const trimmedValue =
     value.trim();
 
-
   if (trimmedValue === "") {
     return "이메일을 입력해주세요.";
   }
 
-
   const emailPattern =
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-
-  if (!emailPattern.test(trimmedValue)) {
+  if (
+    !emailPattern.test(
+      trimmedValue
+    )
+  ) {
     return "올바른 이메일 형식을 입력해주세요.";
   }
-
 
   return "";
 
@@ -360,6 +465,7 @@ nameInput.addEventListener(
     );
 
     formSuccess.textContent = "";
+    formSubmitError.textContent = "";
 
   }
 );
@@ -384,6 +490,7 @@ emailInput.addEventListener(
     );
 
     formSuccess.textContent = "";
+    formSubmitError.textContent = "";
 
   }
 );
@@ -408,6 +515,7 @@ messageInput.addEventListener(
     );
 
     formSuccess.textContent = "";
+    formSubmitError.textContent = "";
 
   }
 );
@@ -415,7 +523,7 @@ messageInput.addEventListener(
 
 contactForm.addEventListener(
   "submit",
-  (event) => {
+  async (event) => {
 
     event.preventDefault();
 
@@ -476,28 +584,125 @@ contactForm.addEventListener(
     if (hasError) {
 
       formSuccess.textContent = "";
+      formSubmitError.textContent = "";
 
       return;
 
     }
 
 
-    formSuccess.textContent =
-      "메시지가 정상적으로 확인되었습니다.";
+    formSuccess.textContent = "";
+    formSubmitError.textContent = "";
+
+    submitButton.disabled = true;
+
+    submitButton.textContent =
+      "전송 중...";
 
 
-    contactForm.reset();
+    const emailData = {
+
+      service_id:
+        emailJsConfig.serviceId,
+
+      template_id:
+        emailJsConfig.templateId,
+
+      user_id:
+        emailJsConfig.publicKey,
+
+      template_params: {
+
+        name:
+          formState.name.trim(),
+
+        email:
+          formState.email.trim(),
+
+        message:
+          formState.message.trim()
+
+      }
+
+    };
 
 
-    formState.name = "";
-    formState.email = "";
-    formState.message = "";
+    try {
+
+      const response =
+        await fetch(
+          emailJsApiUrl,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify(
+                emailData
+              )
+          }
+        );
+
+
+      if (!response.ok) {
+
+        if (
+          response.status === 429
+        ) {
+
+          throw new Error(
+            "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."
+          );
+
+        }
+
+        throw new Error(
+          "메시지 전송에 실패했습니다. 잠시 후 다시 시도해주세요."
+        );
+
+      }
+
+
+      formSuccess.textContent =
+        "메시지가 정상적으로 전송되었습니다.";
+
+
+      contactForm.reset();
+
+
+      formState.name = "";
+      formState.email = "";
+      formState.message = "";
+
+      formState.errors.name = "";
+      formState.errors.email = "";
+      formState.errors.message = "";
+
+
+    } catch (error) {
+
+      formSubmitError.textContent =
+        error.message;
+
+
+    } finally {
+
+      submitButton.disabled = false;
+
+      submitButton.textContent =
+        "보내기";
+
+    }
 
   }
 );
 
 
-/* GitHub API */
+/* GitHub */
 
 const githubUsername =
   "aromadsh";
@@ -544,12 +749,10 @@ const renderFilterButtons = () => {
           ? "All"
           : language;
 
-
       const activeClass =
         projectState.filter === language
           ? " active"
           : "";
-
 
       return `
         <button
@@ -579,7 +782,10 @@ const renderProjects = () => {
   retryButton.hidden = true;
 
 
-  if (projectState.status === "loading") {
+  if (
+    projectState.status ===
+    "loading"
+  ) {
 
     projectsStatus.textContent =
       "GitHub 저장소를 불러오는 중입니다.";
@@ -589,7 +795,10 @@ const renderProjects = () => {
   }
 
 
-  if (projectState.status === "error") {
+  if (
+    projectState.status ===
+    "error"
+  ) {
 
     projectsStatus.textContent =
       projectState.error;
@@ -601,7 +810,10 @@ const renderProjects = () => {
   }
 
 
-  if (projectState.status === "empty") {
+  if (
+    projectState.status ===
+    "empty"
+  ) {
 
     projectsStatus.textContent =
       "표시할 공개 저장소가 없습니다.";
@@ -611,7 +823,10 @@ const renderProjects = () => {
   }
 
 
-  if (projectState.status === "success") {
+  if (
+    projectState.status ===
+    "success"
+  ) {
 
     renderFilterButtons();
 
@@ -619,13 +834,20 @@ const renderProjects = () => {
     const visibleRepos =
       projectState.filter === "all"
         ? projectState.repos
-        : projectState.repos.filter((repo) => {
-            return repo.language ===
-              projectState.filter;
-          });
+        : projectState.repos.filter(
+            (repo) => {
+              return (
+                repo.language ===
+                projectState.filter
+              );
+            }
+          );
 
 
-    if (projectState.filter === "all") {
+    if (
+      projectState.filter ===
+      "all"
+    ) {
 
       projectsStatus.textContent =
         `${projectState.repos.length}개의 저장소를 불러왔습니다.`;
@@ -703,15 +925,12 @@ projectFilters.addEventListener(
         ".filter-button"
       );
 
-
     if (!clickedButton) {
       return;
     }
 
-
     projectState.filter =
       clickedButton.dataset.language;
-
 
     renderProjects();
 
@@ -719,98 +938,103 @@ projectFilters.addEventListener(
 );
 
 
-const fetchRepositories = async () => {
+const fetchRepositories =
+  async () => {
 
-  projectState.status =
-    "loading";
+    projectState.status =
+      "loading";
 
-  projectState.repos =
-    [];
+    projectState.repos =
+      [];
 
-  projectState.error =
-    "";
+    projectState.error =
+      "";
 
-  projectState.filter =
-    "all";
+    projectState.filter =
+      "all";
+
+    renderProjects();
 
 
-  renderProjects();
+    try {
 
-
-  try {
-
-    const response =
-      await fetch(
-        githubApiUrl,
-        {
-          headers: {
-            Accept:
-              "application/vnd.github+json"
+      const response =
+        await fetch(
+          githubApiUrl,
+          {
+            headers: {
+              Accept:
+                "application/vnd.github+json"
+            }
           }
+        );
+
+
+      if (!response.ok) {
+
+        if (
+          response.status === 403
+        ) {
+
+          throw new Error(
+            "GitHub API 요청 한도를 초과했거나 접근이 제한되었습니다."
+          );
+
         }
-      );
 
 
-    if (!response.ok) {
+        if (
+          response.status === 404
+        ) {
 
-      if (response.status === 403) {
+          throw new Error(
+            "GitHub 사용자를 찾을 수 없습니다."
+          );
+
+        }
+
 
         throw new Error(
-          "GitHub API 요청 한도를 초과했거나 접근이 제한되었습니다."
+          `GitHub API 요청에 실패했습니다. 상태 코드: ${response.status}`
         );
 
       }
 
 
-      if (response.status === 404) {
-
-        throw new Error(
-          "GitHub 사용자를 찾을 수 없습니다."
-        );
-
-      }
+      const repos =
+        await response.json();
 
 
-      throw new Error(
-        `GitHub API 요청에 실패했습니다. 상태 코드: ${response.status}`
-      );
+      const filteredRepos =
+        repos.filter((repo) => {
+          return !repo.fork;
+        });
+
+
+      projectState.repos =
+        filteredRepos;
+
+
+      projectState.status =
+        filteredRepos.length === 0
+          ? "empty"
+          : "success";
+
+
+    } catch (error) {
+
+      projectState.status =
+        "error";
+
+      projectState.error =
+        error.message;
 
     }
 
 
-    const repos =
-      await response.json();
+    renderProjects();
 
-
-    const filteredRepos =
-      repos.filter((repo) => {
-        return !repo.fork;
-      });
-
-
-    projectState.repos =
-      filteredRepos;
-
-
-    projectState.status =
-      filteredRepos.length === 0
-        ? "empty"
-        : "success";
-
-  } catch (error) {
-
-    projectState.status =
-      "error";
-
-    projectState.error =
-      error.message;
-
-  }
-
-
-  renderProjects();
-
-};
+  };
 
 
 retryButton.addEventListener(

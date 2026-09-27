@@ -59,7 +59,7 @@
         <button
           type="button"
           class="theme-button"
-          aria-label="다크 모드 전환"
+          aria-label="다크 모드로 전환"
         >
           Dark
         </button>
@@ -339,6 +339,7 @@
 
           <button
             type="submit"
+            id="submit-button"
             class="submit-button"
           >
             보내기
@@ -347,6 +348,12 @@
           <p
             id="form-success"
             class="success-message"
+            aria-live="polite"
+          ></p>
+
+          <p
+            id="form-submit-error"
+            class="submit-error-message"
             aria-live="polite"
           ></p>
 
