@@ -1,6 +1,14 @@
 # 나를 소개하는 웹페이지 처음부터 만들기
 
-![Documentation](https://img.shields.io/badge/Documentation-latest-brightgreen)
+<p align="center">
+  <a href="https://aromadsh.github.io/choonsik/">
+    <img src="https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github" alt="Live Demo">
+  </a>
+
+  <a href="https://github.com/aromadsh/choonsik">
+    <img src="https://img.shields.io/badge/GitHub-Repository-black?logo=github" alt="Repository">
+  </a>
+</p>
 
 순수 HTML, CSS, JavaScript만을 사용하여 처음부터 구현한 반응형 포트폴리오 웹사이트입니다.
 
