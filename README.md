@@ -1,157 +1,107 @@
 # Portfolio Website
 
-HTML CSS JavaScript를 활용하여 제작한 반응형 포트폴리오 웹사이트입니다.
+[Live Demo](https://aromadsh.github.io/choonsik/) | [GitHub Repository](https://github.com/aromadsh/choonsik)
 
-프레임워크나 UI 라이브러리를 사용하지 않고 순수 HTML CSS JavaScript만으로 구현하여 DOM 조작 이벤트 처리 비동기 통신 상태 관리와 반응형 웹의 기본 원리를 학습하는 것을 목표로 제작했습니다.
+순수 HTML, CSS, JavaScript를 사용하여 처음부터 구현한 반응형 포트폴리오 웹사이트입니다.
 
-## 주요 기능
+프레임워크나 UI 라이브러리를 사용하지 않고 DOM 조작, 이벤트 처리, 상태 관리, 비동기 통신 등 웹 프론트엔드의 기본 동작 원리를 직접 구현하는 것을 목표로 개발했습니다.
 
-### 반응형 웹
+GitHub REST API를 연동하여 실제 Repository 데이터를 동적으로 렌더링하며, 사용자 이벤트에 따라 상태를 변경하고 화면을 다시 렌더링하는 구조를 적용했습니다.
 
-Mobile First 방식으로 구현했으며 768px과 1024px을 기준으로 레이아웃이 변경됩니다.
 
-Navigation에는 Flexbox를 사용했으며 Projects 영역에는 CSS Grid의 auto-fit과 minmax를 적용해 화면 너비에 따라 프로젝트 카드의 열 개수가 자동으로 조정됩니다.
+## Overview
 
-### Navigation
+이 프로젝트는 React와 같은 프론트엔드 프레임워크를 사용하기 전에 브라우저의 기본 동작 원리를 이해하기 위해 제작했습니다.
 
-모바일 환경에서는 Hamburger Menu를 사용할 수 있습니다.
+주요 학습 목표는 다음과 같습니다.
 
-Navigation과 Hero 영역의 링크를 클릭하면 JavaScript의 scrollIntoView를 통해 각 Section으로 부드럽게 이동합니다.
+- Semantic HTML을 활용한 문서 구조 설계
+- Flexbox와 Grid를 이용한 반응형 레이아웃
+- DOM 선택 및 조작
+- addEventListener 기반 이벤트 처리
+- 이벤트 → 상태 변경 → DOM 업데이트 흐름 구현
+- localStorage를 이용한 상태 유지
+- Intersection Observer를 활용한 스크롤 인터랙션
+- fetch와 async/await 기반 REST API 통신
+- API Loading, Success, Error, Empty 상태 관리
+- JavaScript ES6 문법과 배열 메서드 활용
 
-### Scroll Interaction
 
-300px 이상 스크롤하면 Scroll Top 버튼이 표시됩니다.
-
-60px 이상 스크롤하면 Header의 배경과 그림자가 변경됩니다.
-
-Intersection Observer를 활용하여 About Skills Projects Contact Section이 화면에 20퍼센트 이상 진입하면 등장 애니메이션이 실행됩니다.
-
-Intersection Observer threshold는 0.2로 설정했습니다.
-
-### Dark Mode
-
-Light Mode와 Dark Mode를 전환할 수 있습니다.
-
-선택한 Theme 상태는 localStorage에 저장되기 때문에 페이지를 새로고침한 이후에도 사용자가 선택한 Theme가 유지됩니다.
-
-### Contact Form Validation
-
-이름 이메일 메시지를 입력받습니다.
-
-JavaScript를 통해 필수 입력 여부를 검사하며 이메일은 정규표현식을 사용하여 형식을 검증합니다.
-
-입력값이 올바르지 않은 경우 각 입력 필드 아래에 오류 메시지를 표시합니다.
-
-현재 Contact Form은 유효성 검증 기능을 구현한 것으로 실제 이메일 전송 기능은 포함하지 않습니다.
-
-### GitHub API
-
-GitHub REST API를 활용하여 사용자의 공개 Repository 데이터를 가져옵니다.
-
-fetch와 async await을 사용해 비동기 요청을 처리하며 try catch와 response.ok를 사용해 오류를 처리합니다.
-
-API 상태는 Loading Success Empty Error로 관리합니다.
-
-API 요청에 실패하면 다시 시도 버튼을 제공합니다.
-
-Fork Repository는 filter를 통해 제외하고 map을 사용하여 Repository 데이터를 Project Card HTML로 변환합니다.
-
-## 사용 기술
-
-HTML5
-
-CSS3
-
-JavaScript ES6+
-
-Git
-
-GitHub API
-
-GitHub Pages
-
-## JavaScript 주요 학습 내용
-
-DOM 선택 및 조작
-
-addEventListener
-
-classList
-
-textContent
-
-innerHTML
-
-Local Storage
-
-Intersection Observer
-
-Form Validation
-
-Regular Expression
-
-fetch
-
-async await
-
-try catch
-
-Array forEach
-
-Array map
-
-Array filter
-
-Object Destructuring
-
-Template Literals
-
-## 프로젝트 구조
-
-```text
-portfolio
-├── index.html
-├── README.md
-├── css
-│   └── style.css
-├── js
-│   └── script.js
-└── images
-    └── profile.png
-```
-
-## 이벤트와 상태 흐름
-
-Theme
-
-Click Event에서 Theme 상태를 변경하고 DOM과 localStorage에 반영합니다.
-
-Contact Form
-
-Input 또는 Submit Event에서 입력 상태와 오류 상태를 변경하고 검증 결과를 DOM에 렌더링합니다.
-
-GitHub API
-
-API 요청 전 Loading 상태로 변경하고 요청 결과에 따라 Success Empty Error 상태로 변경한 후 Projects 영역을 다시 렌더링합니다.
-
-## 배포
-
-GitHub Pages를 이용하여 배포했습니다.
-
-배포 URL
-
-YOUR_GITHUB_PAGES_URL
-
-## Screenshot
+## Preview
 
 ### Desktop
 
-추후 Desktop Screenshot 추가
+![Desktop](./images/screenshots/desktop.png)
 
 ### Mobile
 
-추후 Mobile Screenshot 추가
+![Mobile](./images/screenshots/mobile.png)
 
 ### Dark Mode
 
-추후 Dark Mode Screenshot 추가
+![Dark Mode](./images/screenshots/dark-mode.png)
+
+
+## Features
+
+| Feature | Description |
+| --- | --- |
+| Responsive Design | 모바일 퍼스트 방식으로 768px, 1024px 브레이크포인트를 적용했습니다. |
+| Semantic HTML | header, nav, main, section, article, footer를 활용하여 페이지 구조를 구성했습니다. |
+| Hamburger Menu | 모바일 환경에서 메뉴를 열고 닫을 수 있습니다. |
+| Smooth Scroll | Navigation 및 CTA 클릭 시 해당 Section으로 부드럽게 이동합니다. |
+| Scroll Top | 스크롤 300px 이상에서 페이지 상단 이동 버튼이 표시됩니다. |
+| Dynamic Header | 스크롤 60px 이상에서 Header 스타일이 변경됩니다. |
+| Dark Mode | 사용자가 Light와 Dark Theme을 직접 전환할 수 있습니다. |
+| Theme Persistence | 선택한 Theme을 localStorage에 저장하여 새로고침 후에도 유지합니다. |
+| System Theme | 저장된 Theme이 없으면 prefers-color-scheme을 이용하여 시스템 Theme을 감지합니다. |
+| Scroll Animation | Intersection Observer를 활용하여 Section 진입 시 애니메이션을 실행합니다. |
+| Form Validation | 이름, 이메일, 메시지 필수값 및 이메일 형식을 검증합니다. |
+| GitHub API | GitHub REST API를 호출하여 Repository 목록을 동적으로 출력합니다. |
+| API State | Loading, Success, Error, Empty 상태를 각각 UI로 표현합니다. |
+| Project Filter | Repository의 Language 정보를 기반으로 프로젝트를 필터링합니다. |
+| Typing Effect | Hero 영역의 문장을 JavaScript로 한 글자씩 출력합니다. |
+| Email Contact | EmailJS REST API를 이용하여 Contact 메시지를 실제 이메일로 전송합니다. |
+
+
+## Tech Stack
+
+### Frontend
+
+- HTML5
+- CSS3
+- JavaScript ES6+
+
+### Browser APIs
+
+- DOM API
+- Fetch API
+- Intersection Observer API
+- Web Storage API
+- matchMedia API
+- Form Validation
+
+### External APIs
+
+- GitHub REST API
+- EmailJS REST API
+
+### Deployment
+
+- Git
+- GitHub
+- GitHub Pages
+
+
+## How It Works
+
+이 프로젝트에서는 주요 기능을 다음과 같은 흐름으로 구현했습니다.
+
+```text
+User Event
+    ↓
+State Change
+    ↓
+Render Function
+    ↓
+DOM Update
