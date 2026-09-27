@@ -67,6 +67,7 @@ const typingText =
   document.querySelector("#typing-text");
 
 
+
 /* Typing Effect */
 
 const typingMessage =
@@ -914,6 +915,8 @@ const renderProjects = () => {
   }
 
 };
+
+
 
 
 projectFilters.addEventListener(

@@ -356,8 +356,8 @@ body {
   transform: translateY(30px);
 
   transition:
-    opacity 0.6s ease,
-    transform 0.6s ease;
+    opacity 0.9s ease,
+    transform 0.9s ease;
 }
 
 
