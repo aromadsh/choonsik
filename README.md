@@ -6,7 +6,7 @@
   </a>
 
   <a href="https://github.com/aromadsh/choonsik">
-    <img src="https://img.shields.io/badge/GitHub-Repository-black?logo=github" alt="Repository">
+    <img src="https://img.shields.io/badge/GitHub-Repository-gray?logo=github" alt="Repository">
   </a>
 </p>
 
@@ -37,8 +37,21 @@ https://github.com/aromadsh/choonsik
 
 ### GitHub Pages
 
-배포된 GitHub Pages URL 입력
+https://aromadsh.github.io/choonsik/
 
+## Screenshots
+
+### Desktop
+
+![Desktop Screenshot](./images/screenshots/desktop.png)
+
+### Mobile
+
+![Mobile Screenshot](./images/screenshots/mobile.png)
+
+### Dark Mode
+
+![Dark Mode Screenshot](./images/screenshots/dark-mode.png)
 
 ## 1. 미션 소개
 
