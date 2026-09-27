@@ -1,5 +1,7 @@
 # 나를 소개하는 웹페이지 처음부터 만들기
 
+![Documentation](https://img.shields.io/badge/Documentation-latest-brightgreen)
+
 순수 HTML, CSS, JavaScript만을 사용하여 처음부터 구현한 반응형 포트폴리오 웹사이트입니다.
 
 React, Vue, jQuery, Bootstrap, Tailwind CSS 등의 프레임워크와 UI 라이브러리를 사용하지 않고 브라우저에서 동작하는 DOM 조작, 이벤트 처리, 상태 관리, 비동기 통신의 기본 원리를 직접 구현했습니다.
