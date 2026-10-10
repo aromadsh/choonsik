@@ -11,7 +11,7 @@ class DynamicArray:
 
     def size(self):
         return self.length
-
+    
 
     """기존 용량을 2배로 확장"""
     def _resize(self): 
