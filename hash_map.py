@@ -71,7 +71,7 @@ class HashMap:
         bucket.insert_back(HashEntry(key, value))
         self.count += 1
 
-        if self.count / self.capacity > self.load_factor_limit:
+        if (self.count / self.capacity) > (self.load_factor_limit):
             self._resize()
 
     # 키로 값 조회
@@ -105,12 +105,12 @@ class HashMap:
     def contains(self, key):
         return self._find_node(key) is not None
 
-    # 모든 키를 목록으로 반환
+    # 모든 키를 동적 배열로 반환
     def keys(self):
         result = DynamicArray()
 
         for i in range(self.capacity):
-            bucket = self.buckets.get()
+            bucket = self.buckets.get(i)
             current = bucket.head
 
             while current is not None:
