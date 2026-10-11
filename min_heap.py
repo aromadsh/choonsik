@@ -31,7 +31,7 @@ class MinHeap:
 
         if self.size() > 0:
             self.items.set(0, last)
-            self._heapigy_down(0)
+            self._heapify_down(0)
 
         return root
 
@@ -64,7 +64,7 @@ class MinHeap:
             if (left < self.size()) and (self.items.get(left) < self.items.get(smallest)):
                 smallest = left
 
-            if (right < self.size()) and (self.item.get(right) < self.items.get(smallest)):
+            if (right < self.size()) and (self.items.get(right) < self.items.get(smallest)):
                 smallest = right
 
             if smallest == index:
