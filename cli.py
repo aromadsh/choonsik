@@ -2,7 +2,7 @@ import json
 import shlex
 
 from mini_redis import MiniRedis
-
+from pubsub import PubSub
 
 INTEGER_ERROR = (
     "(error) ERR value is not an integer or out of range"
@@ -30,7 +30,7 @@ def parse_integer(value):
         return None
 
 # 사용자 명령어를 실행하고 레디스 스타일 결과를 반환
-def execute(db, line):
+def execute(db, line, pubsub=None):
     try:
         args = shlex.split(line)
 
@@ -45,7 +45,8 @@ def execute(db, line):
 
     commands = (
         "SET", "GET", "DEL", "EXISTS", "DBSIZE",
-        "KEYS", "CONFIG", "INFO", "EXPIRE", "TTL"
+        "KEYS", "CONFIG", "INFO", "EXPIRE", "TTL",
+        "SUBSCRIBE", "UNSUBSCRIBE", "PUBLISH", "RECEIVE"
     )
 
     if cmd not in commands:
@@ -150,9 +151,52 @@ def execute(db, line):
 
         return f"(integer) {db.expire(args[1], seconds)}"
 
+    if cmd == "RECEIVE":
+        if argc != 2:
+            return (
+                "(error) ERR wrong number of arguments "
+                "for 'RECEIVE' command"
+            )
+
+        messages = pubsub.receive(args[1])
+
+        if messages.size() == 0:
+            return "(empty array)"
+
+        return "\n".join(
+            f"{i + 1}. "
+            f"{json.dumps(messages.get(i), ensure_ascii=False)}"
+            for i in range(messages.size())
+        )
+
+    if cmd in ("SUBSCRIBE", "UNSUBSCRIBE", "PUBLISH"):
+        if argc != 3:
+            return (
+                "(error) ERR wrong number of arguments "
+                f"for '{cmd}' command"
+            )
+
+        if cmd == "SUBSCRIBE":
+            return (
+                f"(integer) "
+                f"{pubsub.subscribe(args[1], args[2])}"
+            )
+
+        if cmd == "UNSUBSCRIBE":
+            return (
+                f"(integer) "
+                f"{pubsub.unsubscribe(args[1], args[2])}"
+            )
+
+        return (
+            f"(integer) "
+            f"{pubsub.publish(args[1], args[2])}"
+        )
+
 # 미니 레디스 REPL 실행
 def main():
     db = MiniRedis()
+    pubsub = PubSub()
 
     while True:
         try:
@@ -165,7 +209,7 @@ def main():
         if line.strip().lower() in ("exit", "quit"):
             break
 
-        result = execute(db, line)
+        result = execute(db, line, pubsub)
 
         if result:
             print(result)
