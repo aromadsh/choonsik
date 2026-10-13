@@ -55,7 +55,7 @@ class DoublyLinkedList:
         if self.head is None:
             return None
 
-        return self.remove_node(self.tail)
+        return self.remove_node(self.head)
 
     # 맨 뒤 노드를 제거
     def remove_back(self):

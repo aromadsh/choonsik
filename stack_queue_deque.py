@@ -36,7 +36,7 @@ class Queue:
     def peek(self):
         return (None if self.items.head is None else self.items.head.data)
 
-    def size (self):
+    def size(self):
         return self.items.size()
 
 
