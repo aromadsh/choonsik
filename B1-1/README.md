@@ -1,7 +1,7 @@
 # 나를 소개하는 웹페이지 처음부터 만들기
 
 <p align="center">
-  <a href="https://aromadsh.github.io/choonsik/">
+  <a href="https://aromadsh.github.io/cobaintro/">
     <img src="https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github" alt="Live Demo">
   </a>
 
