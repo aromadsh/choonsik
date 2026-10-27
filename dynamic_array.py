@@ -1,5 +1,5 @@
 class DynamicArray:
-    """용량을 자동 확장하는 동적 배열"""
+    # 용량을 자동 확장하는 동적 배열
 
     def __init__(self, capacity=2):
         if capacity < 1:
@@ -13,7 +13,7 @@ class DynamicArray:
         return self.length
     
 
-    """기존 용량을 2배로 확장"""
+    # 기존 용량을 2배로 확장
     def _resize(self): 
         new_capacity = self.capacity * 2
         new_data = [None] * new_capacity
@@ -25,7 +25,7 @@ class DynamicArray:
         self.capacity = new_capacity
 
 
-    """배열 끝에 데이터를 추가"""
+    # 배열 끝에 데이터를 추가
     def append(self, value):
         if self.length == self.capacity:
             self._resize()
@@ -34,7 +34,7 @@ class DynamicArray:
         self.length += 1
 
 
-    """인덱스에 해당하는 값을 조회"""
+    # 인덱스에 해당하는 값을 조회
     def get(self, index):
         if (index < 0) or (index >= self.length):
             raise IndexError("index out of range")
@@ -42,7 +42,7 @@ class DynamicArray:
         return self.data[index]
 
 
-    """인덱스에 해당하는 값 수정"""
+    # 인덱스에 해당하는 값 수정
     def set(self, index, value):
         if index < 0 or index >= self.length:
             raise IndexError("index out of range")
@@ -50,7 +50,7 @@ class DynamicArray:
         self.data[index] = value
 
 
-    """특정 위치의 데이터를 삭제"""
+    # 특정 위치의 데이터를 삭제
     def remove(self, index):
         if index < 0 or index >= self.length:
             raise IndexError("index out of range")
