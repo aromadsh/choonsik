@@ -206,3 +206,30 @@ Docker 실행 상태:
 외부 접속 성공:
 
 ![Docker External Access](docs/screenshots/bonus2-docker/02-docker-external-access.png)
+
+---
+
+## AWS 리소스 정리
+
+실습 결과를 검증하고 증빙 자료를 확보한 후
+AWS 리소스 정리를 수행했습니다.
+
+- 정리 일시: YYYY-MM-DD
+- EC2: Terminated 확인
+- EBS: 실습용 볼륨 삭제 확인
+- Elastic IP: 할당 여부 및 해제 확인
+- VPC: 삭제 확인
+- Billing: 확인 완료
+
+### 리소스 정리 증빙
+
+![EC2 종료](docs/screenshots/step10-cleanup/01-ec2-terminated.png)
+
+![VPC 삭제](docs/screenshots/step10-cleanup/03-vpc-deleted.png)
+
+### 참고
+
+AWS 리소스가 삭제되었으므로
+기존 HTTP 및 HTTPS 서비스는 더 이상 접속할 수 없습니다.
+
+[리소스 정리 체크리스트](docs/cleanup-checklist.md)
