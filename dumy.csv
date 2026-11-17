@@ -1,0 +1,13 @@
+date,type,category,amount,memo,tags
+2024-01-15,expense,food,15000,점심,meal
+2024-01-16,income,etc,50000,용돈,bonus
+2024-01-20,expense,food,20000,피자,meal
+2024-01-21,income,etc,10000,용돈,bonus
+2024-01-22,expense,food,30000,치킨,meal
+2024-01-23,income,etc,20000,용돈,bonus
+2024-01-24,expense,food,10000,커피,coffee
+2024-01-25,income,etc,30000,용돈,bonus
+2024-01-26,expense,transport,20300,멤버십,gpt
+2024-01-27,income,etc,40000,용돈,bonus
+2024-01-28,expense,transport,12345,보이스피싱,sibbal
+2024-01-29,income,etc,50000,용돈,bonus
