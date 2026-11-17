@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import List, Optional, Dict, Generator, Tuple, Any
 from .models import Transaction, Category, Budget
 from .repository import Repository
+from .decorators import handle_exceptions, measure_time
+
 
 class BudgetService:
     """가계부 비즈니스 로직을 처리하는 서비스 클래스"""
@@ -45,6 +47,7 @@ class BudgetService:
         self.repo.save_transaction(tx)
         return tx_id
 
+    # @measure_time
     def list_transactions(self, limit: Optional[int] = None) -> Generator[Transaction, None, None]:
         """최신순으로 거래 내역을 스트리밍 조회합니다."""
         txs = self.repo.get_all_transactions()

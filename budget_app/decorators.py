@@ -34,7 +34,6 @@ def measure_time(func: Callable[..., Any]) -> Callable[..., Any]:
         result = func(*args, **kwargs)
         elapsed = time.time() - start_time
         # 필요시 디버깅 용도로 활용 (현재는 패스 또는 로그 출력 가능)
-        if elapsed >= 1.0:
-            print(f"[성능 경고] '{func.__name__}' 작업이 2초를 초과했습니다. (소요 시간: {elapsed:.2f}초)")
+        print(f"\n[성능 측정] '{func.__name__}' 함수 실행 완료 (소요 시간: {elapsed:.4f}초)\n")
         return result
     return wrapper
