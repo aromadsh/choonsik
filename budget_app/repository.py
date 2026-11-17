@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Generator, List, Dict, Any
+from typing import Generator, List, Dict, Any, Optional
 from .models import Transaction, Category, Budget
 
 class Repository:
@@ -27,7 +27,6 @@ class Repository:
             self.cat_file.touch()
             self.init_default_categories()
         else:
-            # 파일이 비어있는지 확인
             if self.cat_file.stat().st_size == 0:
                 self.init_default_categories()
 
@@ -37,7 +36,6 @@ class Repository:
         for cat in defaults:
             self.save_category(Category(name=cat))
 
-    # --- 카테고리 관련 ---
     def get_categories(self) -> List[str]:
         """등록된 모든 카테고리 목록을 반환합니다."""
         categories = []
@@ -67,7 +65,6 @@ class Repository:
                 f.write(json.dumps({"name": cat}, ensure_ascii=False) + "\n")
         os.replace(temp_file, self.cat_file)
 
-    # --- 거래 내역 관련 (스트리밍 제너레이터) ---
     def stream_transactions(self) -> Generator[Transaction, None, None]:
         """파일 전체를 한 번에 올리지 않고, 제너레이터를 통해 한 줄씩 스트리밍 읽기합니다."""
         if not self.tx_file.exists():
@@ -121,7 +118,6 @@ class Repository:
                 f.write(json.dumps(data, ensure_ascii=False) + "\n")
         os.replace(temp_file, self.tx_file)
 
-    # --- 예산 관련 ---
     def get_budget(self, month: str) -> Optional[int]:
         """특정 월(YYYY-MM)의 예산 금액을 조회합니다."""
         if not self.budget_file.exists():

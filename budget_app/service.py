@@ -1,6 +1,6 @@
 import csv
 from datetime import datetime
-from typing import List, Optional, Dict, Generator
+from typing import List, Optional, Dict, Generator, Tuple, Any
 from .models import Transaction, Category, Budget
 from .repository import Repository
 
@@ -14,7 +14,6 @@ class BudgetService:
         txs = self.repo.get_all_transactions()
         if not txs:
             return "TX-000001"
-        # 마지막 ID 번호 추출 후 증가
         max_num = 0
         for tx in txs:
             if tx.id.startswith("TX-"):
@@ -28,11 +27,10 @@ class BudgetService:
 
     def add_transaction(self, tx_type: str, date: str, amount: int, category: str, memo: str, tags: List[str]) -> str:
         """새로운 거래를 추가합니다."""
-        # 검증
         if tx_type not in ["income", "expense"]:
             raise ValueError("타입은 income 또는 expense여야 합니다.")
         try:
-            datetime.strptime(date, "%Y-m-d")
+            datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
             raise ValueError("날짜 형식이 올바르지 않습니다 (YYYY-MM-DD).")
         if amount <= 0:
@@ -50,7 +48,6 @@ class BudgetService:
     def list_transactions(self, limit: Optional[int] = None) -> Generator[Transaction, None, None]:
         """최신순으로 거래 내역을 스트리밍 조회합니다."""
         txs = self.repo.get_all_transactions()
-        # 날짜 내림차순, ID 내림차순 정렬
         txs.sort(key=lambda x: (x.date, x.id), reverse=True)
         count = 0
         for tx in txs:
@@ -91,7 +88,7 @@ class BudgetService:
         for tx in txs:
             if tx.id == tx_id:
                 if date:
-                    datetime.strptime(date, "%Y-m-d")
+                    datetime.strptime(date, "%Y-%m-%d")
                     tx.date = date
                 if tx_type:
                     if tx_type not in ["income", "expense"]:
@@ -128,14 +125,13 @@ class BudgetService:
         return True
 
     def summary_month(self, month: str, top_n: int = 3) -> Dict[str, Any]:
-        """월별 요약 정보를 계산합니다 (총수입, 총지출, 잔액, 예산, 카테고리별 TOP N)."""
+        """월별 요약 정보를 계산합니다."""
         txs = [tx for tx in self.repo.stream_transactions() if tx.date.startswith(month)]
         
         total_income = sum(tx.amount for tx in txs if tx.type == "income")
         total_expense = sum(tx.amount for tx in txs if tx.type == "expense")
         balance = total_income - total_expense
         
-        # 카테고리별 지출 합계
         cat_expense: Dict[str, int] = {}
         for tx in txs:
             if tx.type == "expense":
@@ -159,7 +155,6 @@ class BudgetService:
             "has_data": len(txs) > 0
         }
 
-    # 카테고리 관련 위임
     def add_category(self, name: str) -> None:
         cats = self.repo.get_categories()
         if name in cats:
@@ -174,13 +169,11 @@ class BudgetService:
         if name not in cats:
             raise ValueError("존재하지 않는 카테고리입니다.")
         
-        # 사용 중인 내역 확인
         txs = self.repo.get_all_transactions()
         used = any(tx.category == name for tx in txs)
         if used:
             if not fallback_category or fallback_category not in cats:
                 raise ValueError("해당 카테고리를 사용하는 거래 내역이 있습니다. 대체 카테고리를 지정해주세요.")
-            # 대체 카테고리로 변경
             for tx in txs:
                 if tx.category == name:
                     tx.category = fallback_category
@@ -219,7 +212,7 @@ class BudgetService:
                 ])
         return len(txs)
 
-    def import_csv(self, filename: str) -> tuple[int, int]:
+    def import_csv(self, filename: str) -> Tuple[int, int]:
         """CSV 파일로부터 거래 내역을 가져옵니다."""
         imported = 0
         skipped = 0

@@ -48,7 +48,7 @@ def main() -> None:
     remove_cat_parser.add_argument("--fallback", help="대체 카테고리명 (사용 중인 내역이 있을 경우)")
 
     # 7. update
-    update_parser = subparsers.add_parser("update", help="거래 수정 (대화형 또는 옵션)")
+    update_parser = subparsers.add_parser("update", help="거래 수정")
     update_parser.add_argument("--id", required=True, help="수정할 거래 ID")
     update_parser.add_argument("--date", help="새 날짜 (YYYY-MM-DD)")
     update_parser.add_argument("--type", help="새 타입 (income/expense)")
@@ -74,7 +74,6 @@ def main() -> None:
     args = parser.parse_args()
     service = BudgetService()
 
-    # --- 명령어 분기 처리 ---
     if args.command == "add":
         print("--- 거래 추가 ---")
         date = input("날짜(YYYY-MM-DD): ").strip()
