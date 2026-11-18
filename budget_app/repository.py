@@ -1,149 +1,124 @@
-import json
 import os
-from pathlib import Path
-from typing import Generator, List, Dict, Any, Optional
-from .models import Transaction, Category, Budget
+import json
+import shutil
+from datetime import datetime
+from typing import Generator, List, Dict, Optional
+from .models import Transaction, Category
 
-class Repository:
-    """JSONL 기반 파일 I/O 및 스트리밍 처리 저장소 클래스"""
-    def __init__(self, data_dir: str = "./data") -> None:
-        self.data_dir = Path(data_dir)
-        self.data_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.tx_file = self.data_dir / "transactions.jsonl"
-        self.cat_file = self.data_dir / "categories.jsonl"
-        self.budget_file = self.data_dir / "budgets.jsonl"
-        
+class StorageRepository:
+    def __init__(self, data_dir: str = "./data"):
+        self.data_dir = data_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.trans_file = os.path.join(self.data_dir, "transactions.jsonl")
+        self.cat_file = os.path.join(self.data_dir, "categories.jsonl")
+        self.budget_file = os.path.join(self.data_dir, "budgets.jsonl")
         self._init_files()
 
-    def _init_files(self) -> None:
-        """필요한 파일이 없으면 생성하고, 카테고리가 비어있으면 기본 카테고리를 초기화합니다."""
-        if not self.tx_file.exists():
-            self.tx_file.touch()
-        if not self.budget_file.exists():
-            self.budget_file.touch()
-            
-        if not self.cat_file.exists():
-            self.cat_file.touch()
-            self.init_default_categories()
-        else:
-            if self.cat_file.stat().st_size == 0:
-                self.init_default_categories()
+    def _init_files(self):
+        if not os.path.exists(self.cat_file):
+            default_cats = ["food", "transport", "rent", "salary", "entertainment", "other"]
+            self.save_categories([Category(name=c) for c in default_cats])
+        if not os.path.exists(self.trans_file):
+            open(self.trans_file, "w", encoding="utf-8").close()
+        if not os.path.exists(self.budget_file):
+            open(self.budget_file, "w", encoding="utf-8").close()
 
-    def init_default_categories(self) -> None:
-        """기본 카테고리 초기 생성"""
-        defaults = ["food", "transport", "rent", "salary", "etc"]
-        for cat in defaults:
-            self.save_category(Category(name=cat))
-
-    def get_categories(self) -> List[str]:
-        """등록된 모든 카테고리 목록을 반환합니다."""
-        categories = []
-        if not self.cat_file.exists():
-            return categories
-        with open(self.cat_file, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    data = json.loads(line)
-                    categories.append(data["name"])
-        return categories
-
-    def save_category(self, category: Category) -> None:
-        """새로운 카테고리를 추가합니다."""
-        with open(self.cat_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps({"name": category.name}, ensure_ascii=False) + "\n")
-
-    def remove_category(self, name: str) -> None:
-        """카테고리를 삭제합니다 (원자적 쓰기 적용)."""
-        categories = self.get_categories()
-        if name in categories:
-            categories.remove(name)
-        
-        temp_file = self.cat_file.with_suffix(".tmp")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            for cat in categories:
-                f.write(json.dumps({"name": cat}, ensure_ascii=False) + "\n")
-        os.replace(temp_file, self.cat_file)
+    def _atomic_write(self, filepath: str, lines: List[str]):
+        tmp_file = filepath + ".tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            for line in lines:
+                f.write(line + "\n")
+        os.replace(tmp_file, filepath)
 
     def stream_transactions(self) -> Generator[Transaction, None, None]:
-        """파일 전체를 한 번에 올리지 않고, 제너레이터를 통해 한 줄씩 스트리밍 읽기합니다."""
-        if not self.tx_file.exists():
+        if not os.path.exists(self.trans_file):
             return
-        with open(self.tx_file, "r", encoding="utf-8") as f:
+        with open(self.trans_file, "r", encoding="utf-8") as f:
             for line in f:
-                if line.strip():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
                     data = json.loads(line)
-                    yield Transaction(
-                        id=data["id"],
-                        type=data["type"],
-                        date=data["date"],
-                        amount=data["amount"],
-                        category=data["category"],
-                        memo=data.get("memo", ""),
-                        tags=data.get("tags", [])
-                    )
+                    yield Transaction.from_dict(data)
+                except json.JSONDecodeError:
+                    continue
 
     def get_all_transactions(self) -> List[Transaction]:
-        """모든 거래 내역을 리스트로 반환합니다."""
         return list(self.stream_transactions())
 
-    def save_transaction(self, tx: Transaction) -> None:
-        """거래 내역을 추가합니다."""
-        with open(self.tx_file, "a", encoding="utf-8") as f:
-            data = {
-                "id": tx.id,
-                "type": tx.type,
-                "date": tx.date,
-                "amount": tx.amount,
-                "category": tx.category,
-                "memo": tx.memo,
-                "tags": tx.tags
-            }
-            f.write(json.dumps(data, ensure_ascii=False) + "\n")
+    def save_all_transactions(self, transactions: List[Transaction]):
+        lines = [json.dumps(t.to_dict(), ensure_ascii=False) for t in transactions]
+        self._atomic_write(self.trans_file, lines)
 
-    def save_all_transactions(self, txs: List[Transaction]) -> None:
-        """수정/삭제 등으로 변경된 전체 거래 목록을 원자적으로 덮어씁니다."""
-        temp_file = self.tx_file.with_suffix(".tmp")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            for tx in txs:
-                data = {
-                    "id": tx.id,
-                    "type": tx.type,
-                    "date": tx.date,
-                    "amount": tx.amount,
-                    "category": tx.category,
-                    "memo": tx.memo,
-                    "tags": tx.tags
-                }
-                f.write(json.dumps(data, ensure_ascii=False) + "\n")
-        os.replace(temp_file, self.tx_file)
+    def add_transaction(self, tx: Transaction):
+        txs = self.get_all_transactions()
+        txs.append(tx)
+        self.save_all_transactions(txs)
 
-    def get_budget(self, month: str) -> Optional[int]:
-        """특정 월(YYYY-MM)의 예산 금액을 조회합니다."""
-        if not self.budget_file.exists():
-            return None
+    def get_categories(self) -> List[str]:
+        if not os.path.exists(self.cat_file):
+            return []
+        cats = []
+        with open(self.cat_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        data = json.loads(line)
+                        cats.append(data["name"])
+                    except:
+                        pass
+        return cats
+
+    def save_categories(self, categories: List[Category]):
+        lines = [json.dumps({"name": c.name}, ensure_ascii=False) for c in categories]
+        self._atomic_write(self.cat_file, lines)
+
+    def add_category(self, name: str) -> bool:
+        cats = self.get_categories()
+        if name in cats:
+            return False
+        cats.append(name)
+        self.save_categories([Category(name=c) for c in cats])
+        return True
+
+    def remove_category(self, name: str):
+        cats = self.get_categories()
+        if name in cats:
+            cats.remove(name)
+            self.save_categories([Category(name=c) for c in cats])
+
+    def get_budgets(self) -> Dict[str, int]:
+        if not os.path.exists(self.budget_file):
+            return {}
+        budgets = {}
         with open(self.budget_file, "r", encoding="utf-8") as f:
             for line in f:
-                if line.strip():
-                    data = json.loads(line)
-                    if data["month"] == month:
-                        return data["amount"]
-        return None
-
-    def set_budget(self, month: str, amount: int) -> None:
-        """월별 예산을 설정하거나 갱신합니다 (원자적 쓰기 적용)."""
-        budgets: Dict[str, int] = {}
-        if self.budget_file.exists():
-            with open(self.budget_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    if line.strip():
+                line = line.strip()
+                if line:
+                    try:
                         data = json.loads(line)
-                        budgets[data["month"]] = data["amount"]
-        
+                        budgets[data["month"]] = int(data["amount"])
+                    except:
+                        pass
+        return budgets
+
+    def set_budget(self, month: str, amount: int):
+        budgets = self.get_budgets()
         budgets[month] = amount
-        
-        temp_file = self.budget_file.with_suffix(".tmp")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            for m, amt in budgets.items():
-                f.write(json.dumps({"month": m, "amount": amt}, ensure_ascii=False) + "\n")
-        os.replace(temp_file, self.budget_file)
+        lines = [json.dumps({"month": m, "amount": a}, ensure_ascii=False) for m, a in budgets.items()]
+        self._atomic_write(self.budget_file, lines)
+
+    def get_budget(self, month: str) -> Optional[int]:
+        return self.get_budgets().get(month)
+
+    def backup(self) -> str:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = os.path.join(self.data_dir, f"backup_{timestamp}")
+        os.makedirs(backup_dir, exist_ok=True)
+        for fname in ["transactions.jsonl", "categories.jsonl", "budgets.jsonl"]:
+            src = os.path.join(self.data_dir, fname)
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(backup_dir, fname))
+        return backup_dir

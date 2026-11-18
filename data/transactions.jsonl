@@ -29,3 +29,7 @@
 {"id": "TX-000030", "type": "income", "date": "2024-01-20", "amount": 50000, "category": "etc", "memo": "용돈", "tags": ["bonus"]}
 {"id": "TX-000031", "type": "income", "date": "2024-01-20", "amount": 50000, "category": "etc", "memo": "용돈", "tags": ["bonus"]}
 {"id": "TX-000032", "type": "income", "date": "2024-01-20", "amount": 50000, "category": "etc", "memo": "용돈", "tags": ["bonus"]}
+{"id": "TX-000033", "type": "expense", "date": "2024-01-15", "amount": 9999, "category": "food", "memo": "점심", "tags": ["meal"]}
+{"id": "TX-000034", "type": "expense", "date": "2024-01-15", "amount": 9999, "category": "food", "memo": "점심", "tags": ["meal"]}
+{"id": "TX-000035", "type": "expense", "date": "2025-01-01", "amount": 5000, "category": "food", "memo": "d", "tags": ["d"]}
+{"id": "TX-000036", "type": "income", "date": "2025-01-01", "amount": 10000, "category": "food", "memo": "d", "tags": ["d"]}
