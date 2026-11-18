@@ -1,250 +1,355 @@
+import calendar
 import csv
+import heapq
+import json
 import os
-from datetime import datetime
-from typing import List, Optional
-from .models import Transaction
+import tempfile
+import uuid
+from dataclasses import asdict, replace
+from pathlib import Path
+from typing import Iterable, Iterator
+
+from .models import RecurringRule, Transaction
 from .repository import StorageRepository
+from .validation import positive_amount, positive_count, validate_date, validate_month, validate_period
+
+
+CSV_COLUMNS = ["date", "type", "category", "amount", "memo", "tags"]
+
+
+def _date_order(tx: Transaction) -> tuple[str, str]:
+    return (tx.date, tx.id)
+
+
+def _file_transactions(path: Path) -> Iterator[Transaction]:
+    with path.open("r", encoding="utf-8") as file:
+        for line in file:
+            yield Transaction.from_dict(json.loads(line))
+
+
+def sort_transactions(source: Iterable[Transaction], chunk_size: int = 500) -> Iterator[Transaction]:
+    """큰 검색 결과도 임시 JSONL 청크로 외부 정렬하여 메모리 사용 제한."""
+    with tempfile.TemporaryDirectory(prefix="budget_sort_") as folder:
+        files: list[Path] = []
+        chunk: list[Transaction] = []
+
+        def save_chunk() -> None:
+            chunk.sort(key=_date_order, reverse=True)
+            path = Path(folder) / f"chunk_{len(files)}.jsonl"
+            with path.open("w", encoding="utf-8") as file:
+                for tx in chunk:
+                    file.write(json.dumps(tx.to_dict(), ensure_ascii=False) + "\n")
+            files.append(path)
+            chunk.clear()
+
+        for tx in source:
+            chunk.append(tx)
+            if len(chunk) >= chunk_size:
+                save_chunk()
+        if not files:
+            yield from sorted(chunk, key=_date_order, reverse=True)
+            return
+        if chunk:
+            save_chunk()
+        yield from heapq.merge(
+            *(_file_transactions(path) for path in files),
+            key=_date_order, reverse=True,
+        )
+
 
 class BudgetService:
-    def __init__(self, data_dir: str = "./data"):
+    def __init__(self, data_dir: str = "./data") -> None:
         self.repo = StorageRepository(data_dir)
 
-    def generate_id(self) -> str:
-        txs = self.repo.get_all_transactions()
-        if not txs:
-            return "TX-000001"
-        max_num = 0
-        for t in txs:
-            if t.id.startswith("TX-"):
-                try:
-                    num = int(t.id.split("-")[1])
-                    if num > max_num:
-                        max_num = num
-                except ValueError:
-                    pass
-        return f"TX-{max_num + 1:06d}"
-
-    def add_transaction(self, date: str, type_val: str, category: str, amount: int, memo: str, tags: List[str]) -> str:
-        try:
-            datetime.strptime(date, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError("날짜 형식이 올바르지 않습니다 (YYYY-MM-DD).")
-        
-        if type_val not in ["income", "expense"]:
+    def _validated_fields(
+        self, date: str, type_val: str, category: str, amount: int,
+    ) -> None:
+        validate_date(date)
+        if type_val not in ("income", "expense"):
             raise ValueError("타입은 income 또는 expense여야 합니다.")
-        
-        cats = self.repo.get_categories()
-        if category not in cats:
-            raise ValueError(f"존재하지 않는 카테고리입니다: {category}. 먼저 카테고리를 추가해주세요.")
-        
-        if amount <= 0:
-            raise ValueError("금액은 양수여야 합니다.")
+        if category not in self.repo.get_categories():
+            raise ValueError(f"등록되지 않은 카테고리입니다: {category}. category list로 확인하세요.")
+        positive_amount(amount)
 
-        tx_id = self.generate_id()
-        tx = Transaction(id=tx_id, type=type_val, date=date, amount=amount, category=category, memo=memo, tags=tags)
+    def generate_id(self) -> str:
+        return "TX-" + uuid.uuid4().hex
+
+    def add_transaction(
+        self, date: str, type_val: str, category: str, amount: int,
+        memo: str = "", tags: list[str] | None = None,
+    ) -> str:
+        self._validated_fields(date, type_val, category, amount)
+        tx = Transaction(
+            id=self.generate_id(), type=type_val, date=date,
+            amount=amount, category=category, memo=memo,
+            tags=tags or [],
+        )
         self.repo.add_transaction(tx)
-        return tx_id
+        return tx.id
 
-    def list_transactions(self, limit: Optional[int] = None) -> List[Transaction]:
-        txs = sorted(self.repo.stream_transactions(), key=lambda x: x.date, reverse=True)
-        if limit is not None:
-            return txs[:limit]
-        return txs
+    def list_transactions(self, limit: int = 10) -> list[Transaction]:
+        positive_count(limit, "--limit")
+        return heapq.nlargest(limit, self.repo.stream_transactions(), key=_date_order)
 
-    def search_transactions(self, from_date: Optional[str], to_date: Optional[str], category: Optional[str], type_val: Optional[str], q: Optional[str], tag: Optional[str]) -> List[Transaction]:
-        txs = []
-        for t in self.repo.stream_transactions():
-            if from_date and t.date < from_date:
-                continue
-            if to_date and t.date > to_date:
-                continue
-            if category and t.category != category:
-                continue
-            if type_val and t.type != type_val:
-                continue
-            if q and q.lower() not in t.memo.lower():
-                continue
-            if tag and tag not in t.tags:
-                continue
-            txs.append(t)
-        return sorted(txs, key=lambda x: x.date, reverse=True)
+    def search_transactions(
+        self, from_date: str | None = None, to_date: str | None = None,
+        category: str | None = None, type_val: str | None = None,
+        q: str | None = None, tag: str | None = None,
+    ) -> Iterator[Transaction]:
+        validate_period(from_date, to_date)
+        if type_val is not None and type_val not in ("income", "expense"):
+            raise ValueError("--type은 income 또는 expense여야 합니다.")
+        if category is not None and category not in self.repo.get_categories():
+            raise ValueError(f"등록되지 않은 카테고리입니다: {category}")
 
-    def update_transaction(self, tx_id: str, date: Optional[str], type_val: Optional[str], category: Optional[str], amount: Optional[int], memo: Optional[str], tags: Optional[List[str]]) -> bool:
-        txs = self.repo.get_all_transactions()
-        found = False
-        for t in txs:
-            if t.id == tx_id:
-                found = True
-                if date is not None:
-                    try:
-                        datetime.strptime(date, "%Y-%m-%d")
-                    except ValueError:
-                        raise ValueError("날짜 형식이 올바르지 않습니다 (YYYY-MM-DD).")
-                    t.date = date
-                if type_val is not None:
-                    if type_val not in ["income", "expense"]:
-                        raise ValueError("타입은 income 또는 expense여야 합니다.")
-                    t.type = type_val
-                if category is not None:
-                    if category not in self.repo.get_categories():
-                        raise ValueError(f"존재하지 않는 카테고리입니다: {category}")
-                    t.category = category
-                if amount is not None:
-                    if amount <= 0:
-                        raise ValueError("금액은 양수여야 합니다.")
-                    t.amount = amount
-                if memo is not None:
-                    t.memo = memo
-                if tags is not None:
-                    t.tags = tags
-                break
-        if not found:
-            return False
-        self.repo.save_all_transactions(txs)
-        return True
+        def matching() -> Iterator[Transaction]:
+            for tx in self.repo.stream_transactions():
+                if from_date and tx.date < from_date:
+                    continue
+                if to_date and tx.date > to_date:
+                    continue
+                if category and tx.category != category:
+                    continue
+                if type_val and tx.type != type_val:
+                    continue
+                if q and q.casefold() not in tx.memo.casefold():
+                    continue
+                if tag and tag not in tx.tags:
+                    continue
+                yield tx
+
+        return sort_transactions(matching())
+
+    def update_transaction(
+        self, tx_id: str, date: str | None = None, type_val: str | None = None,
+        category: str | None = None, amount: int | None = None,
+        memo: str | None = None, tags: list[str] | None = None,
+    ) -> bool:
+        if date is not None:
+            validate_date(date)
+        if type_val is not None and type_val not in ("income", "expense"):
+            raise ValueError("타입은 income 또는 expense여야 합니다.")
+        if category is not None and category not in self.repo.get_categories():
+            raise ValueError(f"등록되지 않은 카테고리입니다: {category}")
+        if amount is not None:
+            positive_amount(amount)
+
+        def change(tx: Transaction) -> Transaction:
+            values = {}
+            for name, value in (
+                ("date", date), ("type", type_val), ("category", category),
+                ("amount", amount), ("memo", memo), ("tags", tags),
+            ):
+                if value is not None:
+                    values[name] = value
+            return replace(tx, **values)
+
+        return self.repo.edit_transaction(tx_id, change)
 
     def delete_transaction(self, tx_id: str) -> bool:
-        txs = self.repo.get_all_transactions()
-        new_txs = [t for t in txs if t.id != tx_id]
-        if len(new_txs) == len(txs):
-            return False
-        self.repo.save_all_transactions(new_txs)
-        return True
+        return self.repo.edit_transaction(tx_id, lambda tx: None)
 
-    def summary(self, month: str, top_n: int = 3):
-        try:
-            datetime.strptime(month, "%Y-%m")
-        except ValueError:
-            raise ValueError("월 형식은 YYYY-MM이어야 합니다.")
-
-        total_income = 0
-        total_expense = 0
-        cat_expenses = {}
-
-        for t in self.repo.stream_transactions():
-            if t.date.startswith(month):
-                if t.type == "income":
-                    total_income += t.amount
-                elif t.type == "expense":
-                    total_expense += t.amount
-                    cat_expenses[t.category] = cat_expenses.get(t.category, 0) + t.amount
-
-        balance = total_income - total_expense
+    def summary(self, month: str, top_n: int = 3) -> None:
+        validate_month(month)
+        positive_count(top_n, "--top")
+        income = expense = count = 0
+        expenses: dict[str, int] = {}
+        for tx in self.repo.stream_transactions():
+            if tx.date[:7] != month:
+                continue
+            count += 1
+            if tx.type == "income":
+                income += tx.amount
+            else:
+                expense += tx.amount
+                expenses[tx.category] = expenses.get(tx.category, 0) + tx.amount
+        if not count:
+            print(f"[데이터 없음] {month}에 등록된 거래가 없습니다.")
+        print(f"총 수입: {income}원")
+        print(f"총 지출: {expense}원")
+        print(f"잔액: {income - expense}원")
         budget = self.repo.get_budget(month)
-
-        print(f"총 수입: {total_income}원")
-        print(f"총 지출: {total_expense}원")
-        print(f"잔액: {balance}원")
-
-        if budget is not None:
-            usage_pct = (total_expense / budget) * 100 if budget > 0 else 0
-            print(f"예산: {budget}원 (사용률 {usage_pct:.1f}%)")
-            if total_expense > budget:
+        if budget is None:
+            print("예산: 미설정")
+        elif budget == 0:
+            print("예산: 0원 (사용률: 계산 불가 — 예산 0원)")
+            if expense > 0:
                 print("[경고] 예산을 초과했습니다!")
         else:
-            print("예산: 미설정")
-
+            print(f"예산: {budget}원 (사용률 {expense / budget * 100:.1f}%)")
+            if expense > budget:
+                print("[경고] 예산을 초과했습니다!")
         print(f"\n지출 TOP {top_n}")
-        sorted_cats = sorted(cat_expenses.items(), key=lambda x: x[1], reverse=True)
-        for i, (cat, amt) in enumerate(sorted_cats[:top_n], 1):
-            print(f"{i}) {cat} {amt}원")
-        if not sorted_cats:
-            print("데이터 없음")
+        for index, (category, amount) in enumerate(
+            sorted(expenses.items(), key=lambda item: (-item[1], item[0]))[:top_n], 1,
+        ):
+            print(f"{index}) {category} {amount}원")
+        if not expenses:
+            print("지출 데이터 없음")
 
-    def set_budget(self, month: str, amount: int):
-        try:
-            datetime.strptime(month, "%Y-%m")
-        except ValueError:
-            raise ValueError("월 형식은 YYYY-MM이어야 합니다.")
-        if amount < 0:
-            raise ValueError("예산 금액은 0 이상이어야 합니다.")
+    def set_budget(self, month: str, amount: int) -> None:
+        validate_month(month)
+        if type(amount) is not int or amount < 0:
+            raise ValueError("예산 금액은 0 이상의 정수여야 합니다.")
         self.repo.set_budget(month, amount)
 
-    def manage_category(self, action: str, name: Optional[str] = None):
+    def manage_category(self, action: str, name: str | None = None) -> None:
         if action == "list":
-            cats = self.repo.get_categories()
             print("등록된 카테고리:")
-            for c in cats:
-                print(f"- {c}")
-        elif action == "add":
-            if not name:
-                raise ValueError("추가할 카테고리 이름을 입력해주세요.")
-            success = self.repo.add_category(name)
-            if success:
-                print(f"[저장 완료] category={name}")
-            else:
-                print(f"[알림] 이미 존재하는 카테고리입니다: {name}")
+            categories = self.repo.get_categories()
+            for category in categories:
+                print(f"- {category}")
+            if not categories:
+                print("등록된 카테고리가 없습니다.")
+            return
+        if not name or not name.strip():
+            raise ValueError("카테고리 이름을 입력해야 합니다.")
+        name = name.strip()
+        if action == "add":
+            if not self.repo.add_category(name):
+                raise ValueError(f"이미 등록된 카테고리입니다: {name}")
+            print(f"[저장 완료] category={name}")
         elif action == "remove":
-            if not name:
-                raise ValueError("삭제할 카테고리 이름을 입력해주세요.")
-            used = any(t.category == name for t in self.repo.stream_transactions())
-            if used:
-                raise ValueError(f"해당 카테고리({name})를 사용하는 내역이 존재하여 삭제할 수 없습니다.")
-            self.repo.remove_category(name)
+            if any(tx.category == name for tx in self.repo.stream_transactions()):
+                raise ValueError(f"카테고리 {name}을 사용하는 거래가 있어 삭제할 수 없습니다.")
+            if any(rule.category == name for rule in self.repo.stream_recurring()):
+                raise ValueError(f"카테고리 {name}을 사용하는 반복 규칙이 있어 삭제할 수 없습니다.")
+            if not self.repo.remove_category(name):
+                raise ValueError(f"존재하지 않는 카테고리입니다: {name}")
             print(f"[삭제 완료] category={name}")
+        else:
+            raise ValueError("지원하지 않는 category 명령어입니다.")
 
-    def export_csv(self, out_path: str, month: Optional[str] = None, from_date: Optional[str] = None, to_date: Optional[str] = None):
-        if not month and not (from_date and to_date):
-            raise ValueError("export는 --month 또는 (--from과 --to) 조건 중 하나 이상을 필수로 받아야 합니다.")
-        
-        txs = self.repo.get_all_transactions()
-        filtered = []
-        for t in txs:
-            if month and not t.date.startswith(month):
-                continue
-            if from_date and t.date < from_date:
-                continue
-            if to_date and t.date > to_date:
-                continue
-            filtered.append(t)
+    def export_csv(
+        self, out_path: str, month: str | None = None,
+        from_date: str | None = None, to_date: str | None = None,
+    ) -> int:
+        if month is None and from_date is None and to_date is None:
+            raise ValueError("export는 --month 또는 --from/--to 조건이 필요합니다.")
+        if month is not None:
+            validate_month(month)
+        validate_period(from_date, to_date)
+        destination = Path(out_path).resolve()
+        protected = {p.resolve() for p in (
+            self.repo.trans_file, self.repo.cat_file,
+            self.repo.budget_file, self.repo.recurring_file,
+        )}
+        if destination in protected:
+            raise ValueError("저장 데이터 파일을 export 출력 경로로 사용할 수 없습니다.")
+        if not destination.parent.exists():
+            raise ValueError("출력 폴더가 존재하지 않습니다. 폴더를 먼저 만들어주세요.")
+        if destination.exists() and destination.is_dir():
+            raise ValueError("출력 경로가 디렉토리입니다.")
+        count = 0
+        temp_name: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", newline="", dir=destination.parent,
+                prefix=".budget_export_", suffix=".tmp", delete=False,
+            ) as file:
+                temp_name = file.name
+                writer = csv.writer(file)
+                writer.writerow(CSV_COLUMNS)
+                for tx in self.repo.stream_transactions():
+                    if month and tx.date[:7] != month:
+                        continue
+                    if from_date and tx.date < from_date:
+                        continue
+                    if to_date and tx.date > to_date:
+                        continue
+                    writer.writerow([tx.date, tx.type, tx.category, tx.amount, tx.memo, ",".join(tx.tags)])
+                    count += 1
+                file.flush()
+                os.fsync(file.fileno())
+            os.replace(temp_name, destination)
+        finally:
+            if temp_name and os.path.exists(temp_name):
+                os.unlink(temp_name)
+        print(f"[완료] {destination} ({count} records)")
+        return count
 
-        with open(out_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["date", "type", "category", "amount", "memo", "tags"])
-            for t in filtered:
-                writer.writerow([t.date, t.type, t.category, t.amount, t.memo, ",".join(t.tags)])
-        print(f"[완료] {out_path} ({len(filtered)} records)")
-
-    def import_csv(self, in_path: str):
-        if not os.path.exists(in_path):
+    def import_csv(self, in_path: str) -> tuple[int, int]:
+        if not Path(in_path).is_file():
             raise FileNotFoundError(f"가져올 파일을 찾을 수 없습니다: {in_path}")
-        
-        imported = 0
-        skipped = 0
-        cats = self.repo.get_categories()
-
-        with open(in_path, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
+        imported = skipped = 0
+        with open(in_path, "r", encoding="utf-8-sig", newline="") as file:
+            reader = csv.DictReader(file)
+            if reader.fieldnames is None or any(c not in reader.fieldnames for c in CSV_COLUMNS[:4]):
+                raise ValueError("CSV 필수 헤더(date,type,category,amount)가 없습니다.")
+            for row_number, row in enumerate(reader, 2):
                 try:
+                    if None in row:  # 필드 수 초과
+                        raise ValueError("CSV 열 개수가 맞지 않습니다.")
+                    amount_text = row["amount"]
+                    if amount_text is None or not amount_text.isascii() or not amount_text.isdecimal():
+                        raise ValueError("금액은 양의 정수여야 합니다.")
+                    amount = int(amount_text)
                     date = row["date"]
-                    t_type = row["type"]
+                    type_val = row["type"]
                     category = row["category"]
-                    amount = int(row["amount"])
-                    memo = row.get("memo", "")
-                    tags_str = row.get("tags", "")
+                    self._validated_fields(date, type_val, category, amount)
+                    memo = row.get("memo") or ""
+                    tags_str = row.get("tags") or ""
                     tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
-
-                    datetime.strptime(date, "%Y-%m-%d")
-                    if t_type not in ["income", "expense"]:
-                        skipped += 1
-                        continue
-                    if category not in cats:
-                        skipped += 1
-                        continue
-                    if amount <= 0:
-                        skipped += 1
-                        continue
-
-                    tx_id = self.generate_id()
-                    tx = Transaction(id=tx_id, type=t_type, date=date, amount=amount, category=category, memo=memo, tags=tags)
-                    self.repo.add_transaction(tx)
+                    self.repo.add_transaction(Transaction(
+                        id=self.generate_id(), date=date, type=type_val,
+                        category=category, amount=amount, memo=memo, tags=tags,
+                    ))
                     imported += 1
-                except Exception:
+                except (ValueError, TypeError, KeyError) as error:
                     skipped += 1
-
+                    print(f"[건너뜀] CSV {row_number}행: {error}")
         print(f"[완료] imported={imported}, skipped={skipped}")
+        return imported, skipped
 
-    def backup(self):
-        b_dir = self.repo.backup()
-        print(f"[백업 완료] 경로: {b_dir}")
+    def add_recurring(
+        self, type_val: str, category: str, amount: int,
+        day: int, start_month: str, memo: str = "", tags: list[str] | None = None,
+    ) -> str:
+        validate_month(start_month)
+        if type_val not in ("income", "expense"):
+            raise ValueError("타입은 income 또는 expense여야 합니다.")
+        if category not in self.repo.get_categories():
+            raise ValueError(f"등록되지 않은 카테고리입니다: {category}")
+        positive_amount(amount)
+        if not 1 <= day <= 31:
+            raise ValueError("반복일은 1부터 31 사이여야 합니다.")
+        rule = RecurringRule(
+            id="RR-" + uuid.uuid4().hex, type=type_val, category=category,
+            amount=amount, day=day, start_month=start_month, memo=memo, tags=tags or [],
+        )
+        self.repo.add_recurring(rule)
+        return rule.id
+
+    def list_recurring(self) -> list[RecurringRule]:
+        return list(self.repo.stream_recurring())
+
+    def generate_recurring(self, month: str) -> tuple[int, int]:
+        validate_month(month)
+        existing = {tx.recurring_key for tx in self.repo.stream_transactions() if tx.recurring_key}
+        generated: list[Transaction] = []
+        skipped = 0
+        year, number = map(int, month.split("-"))
+        last_day = calendar.monthrange(year, number)[1]
+        for rule in self.repo.stream_recurring():
+            if rule.start_month > month:
+                continue
+            key = f"{rule.id}:{month}"
+            if key in existing:
+                skipped += 1
+                continue
+            day = min(rule.day, last_day)
+            generated.append(Transaction(
+                id=self.generate_id(), type=rule.type, category=rule.category,
+                amount=rule.amount, date=f"{month}-{day:02d}", memo=rule.memo,
+                tags=list(rule.tags), recurring_key=key,
+            ))
+            existing.add(key)
+        count = self.repo.add_transactions(generated)
+        print(f"[완료] generated={count}, skipped={skipped}")
+        return count, skipped
+
+    def backup(self) -> str:
+        directory = self.repo.backup()
+        print(f"[백업 완료] 경로: {directory}")
+        return directory

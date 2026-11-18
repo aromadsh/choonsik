@@ -1,21 +1,23 @@
+import functools
 import sys
-from functools import wraps
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
 
-def handle_exceptions(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def handle_exceptions(func: Callable[P, R]) -> Callable[P, R]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
-        except ValueError as e:
-            print(f"[오류] {e}")
-            print(f"[힌트] 입력값이나 형식을 다시 확인해주세요.")
-            sys.exit(1)
-        except FileNotFoundError as e:
-            print(f"[오류] 파일을 찾을 수 없습니다: {e}")
-            print(f"[힌트] 저장 폴더 및 파일 경로를 확인해주세요.")
-            sys.exit(1)
-        except Exception as e:
-            print(f"[오류] 예상치 못한 오류가 발생했습니다: {e}")
-            print(f"[힌트] 명령어와 인자를 다시 확인해주세요.")
-            sys.exit(1)
+        except (ValueError, OSError, UnicodeError, KeyError, TypeError) as error:
+            print(f"[오류] {error}", file=sys.stderr)
+            print("[힌트] 입력값, 저장 경로와 파일 형식을 확인하세요.", file=sys.stderr)
+            raise SystemExit(1) from None
+        except (EOFError, KeyboardInterrupt):
+            print("\n[오류] 입력이 중단되었습니다.", file=sys.stderr)
+            print("[힌트] 명령어를 다시 실행하세요.", file=sys.stderr)
+            raise SystemExit(1) from None
     return wrapper

@@ -1,120 +1,135 @@
-# 💰 Console Household Account Book (콘솔 가계부 프로그램)
+# 나만의 용돈 기입장
 
-파이썬 표준 라이브러리만을 활용하여 외부 의존성 없이 동작하는 고성능·안전성 중심의 콘솔 기반 가계부 애플리케이션입니다. JSONL 스트리밍 처리, 원자적 파일 입출력(Atomic I/O), 그리고 데코레이터 기반의 예외 처리를 적용하여 견고한 구조를 갖추고 있습니다.
+Python 3.10 이상 · **표준 라이브러리만 사용** · JSONL 영구 저장 기반 콘솔 가계부
 
----
-
-## 📁 디렉토리 구조 (Directory Structure)
+## 폴더 구조
 
 ```text
-budget_app/
-├── README.md
-├── data/                    # 영구 데이터 저장 폴더 (3개 이상 파일 유지)
-│   ├── transactions.jsonl   # 거래 내역 데이터
-│   ├── categories.jsonl     # 카테고리 데이터
-│   └── budgets.jsonl        # 월별 예산 데이터
-└── budget_app/
-    ├── __init__.py          # 패키지 선언
-    ├── __main__.py          # CLI 진입점
-    ├── models.py            # 데이터 모델 (Transaction, Category, Budget)
-    ├── repository.py        # 파일 I/O 및 스트리밍 저장소 (원자적 쓰기 지원)
-    ├── decorators.py        # 예외 처리 및 시간 측정 데코레이터
-    ├── service.py           # 비즈니스 로직 및 데이터 검증 서비스
-    └── cli.py               # argparse 기반 인터페이스 및 명령어 파싱
+my_budget/
+├── budget_app/
+│   ├── __init__.py
+│   ├── __main__.py
+│   ├── cli.py
+│   ├── decorators.py
+│   ├── formatting.py
+│   ├── models.py
+│   ├── repository.py
+│   ├── service.py
+│   └── validation.py
+├── data/                      # 최초 명령 실행 시 자동 생성
+│   ├── transactions.jsonl
+│   ├── categories.jsonl
+│   ├── budgets.jsonl
+│   └── recurring.jsonl
+├── tests/
+│   └── test_budget.py
+└── README.md
 ```
 
----
+## 실행
 
-## ⚙️ 핵심 기술 스택 및 아키텍처 설계
+**`my_budget/` 폴더에서 실행**합니다. 별도 `pip install`은 필요하지 않습니다.
 
-1. **계층형 모듈 설계 (Separation of Concerns)**
-   - `models.py`: 데이터 구조 정의 (`@dataclass` 활용)
-   - `repository.py`: 순수 파일 입출력 및 원자적 쓰기(`os.replace`) 전담
-   - `service.py`: 도메인 규칙 검증, 예산 계산, CSV 파싱 등 비즈니스 로직 처리
-   - `cli.py`: 사용자 인터페이스 및 명령어 파싱
+```sh
+python -m budget_app --help
+python -m budget_app add
+python -m budget_app list
+python -m budget_app list --limit 3
+python -m budget_app search --from 2026-11-01 --to 2026-11-30 --category food --type expense --q 점심 --tag meal
+python -m budget_app summary --month 2026-11 --top 3
+python -m budget_app budget set --month 2026-11 --amount 500000
+python -m budget_app budget show --month 2026-11
+python -m budget_app category list
+python -m budget_app category add --name travel
+python -m budget_app category remove --name travel
+python -m budget_app update --id TX-여기에ID --amount 18000 --memo '점심 수정'
+python -m budget_app delete --id TX-여기에ID
+python -m budget_app export --out ./export.csv --month 2026-11
+python -m budget_app export --out ./export.csv --from 2026-11-01 --to 2026-11-30
+python -m budget_app import --from ./export.csv
+```
 
-2. **메모리 효율적인 스트리밍 (`yield` 제너레이터)**
-   - 대용량 거래 내역 파일을 한 번에 메모리에 적재하지 않고, 제너레이터를 통해 한 줄씩 스트리밍 처리하여 메모리 복잡도를 $O(1)$로 유지합니다.
+- `add`: 날짜/타입/카테고리/금액/메모/태그를 대화형으로 받습니다.
+- `list`: **거래 날짜** 최신순으로 최대 10건(기본값) 출력합니다.
+- `search`: 조건을 모두 AND로 결합하며 날짜 최신순으로 출력합니다.
+- `update`: **옵션 방식으로 고정**합니다. 지정한 필드만 변경합니다. `--tags ''`는 태그를 비웁니다.
+- `delete`: `--id`가 반드시 필요합니다. 없는 ID는 오류 종료합니다.
+- `category remove`: 거래 및 반복 규칙에서 사용 중인 카테고리는 삭제할 수 없습니다.
+- 각 명령 및 하위 명령에 `--help`를 붙여 옵션을 확인할 수 있습니다.
+- 공통 저장 폴더 옵션은 **명령어 앞에** 입력합니다.
 
-3. **원자적 파일 업데이트 (Atomic File I/O)**
-   - 수정 및 삭제 작업 시 임시 파일(`.tmp`)에 먼저 기록한 후 원본 파일로 교체(`os.replace`)하여, 쓰기 도중 예기치 않게 프로그램이 중단되어도 원본 파일이 손상되지 않습니다.
+```sh
+python -m budget_app --data-dir ./test_data list --limit 5
+```
 
-4. **데코레이터 기반 공통 예외 처리 (`@handle_exceptions`)**
-   - 예외 발생 시 복잡한 스택트레이스(Traceback) 노출을 차단하고, 사용자 친화적인 오류 메시지와 해결 힌트를 출력한 뒤 비정상 종료 코드(`sys.exit(1)`)를 반환합니다.
+## 보너스 기능
 
-5. **데이터 신뢰성 및 확장성 전략**
-   - **JSONL 포맷 채택**: 리스트 형태의 태그(`tags`) 등 중첩 구조를 행 단위로 직관적으로 저장하고 스트리밍하기 위해 선택했습니다.
-   - **CSV 부분 성공(Partial Success) 전략**: `import` 시 일부 깨진 행이 섞여 있더라도 전체 작업을 중단하지 않고, 유효한 행은 정상 등록하며 오류 행은 건너뛴 뒤 상세 리포트(`imported`, `skipped`)를 제공합니다.
+```sh
+python -m budget_app backup
+python -m budget_app recurring add --type income --category salary --amount 3000000 --day 25 --start-month 2026-11 --memo 월급 --tags salary
+python -m budget_app recurring add --type expense --category rent --amount 600000 --day 31 --start-month 2026-11 --memo 월세
+python -m budget_app recurring list
+python -m budget_app recurring generate --month 2026-11
+python -m budget_app recurring generate --month 2026-11  # 이미 생성된 규칙은 건너뜀
+```
 
----
+- 백업은 `data/backup_YYYYMMDD_HHMMSS_임의문자/`에 4개 데이터 파일을 복사합니다.
+- 반복 거래는 규칙별 지정 월부터 생성되며 **월간 반복**만 지원합니다.
+- 매월 31일처럼 존재하지 않는 날짜는 해당 월의 말일로 조정합니다.
+- 같은 규칙의 같은 월은 `recurring_key`로 중복 생성을 방지합니다. 단, 생성 거래를 삭제하면 다시 생성할 수 있습니다.
+- 목록·검색은 외부 라이브러리 없이 한글 폭을 고려해 고정 폭 테이블로 출력합니다. 긴 문구는 `…`로 축약됩니다.
+- 수정·삭제 등 전체 재작성 시 같은 폴더에 임시 파일을 만들고 `os.replace`로 교체합니다.
 
-## 🚀 실행 방법 및 명령어 가이드
+## 저장 파일/스키마
 
-프로그램은 프로젝트 루트 경로에서 모듈 실행 방식(`-m`)으로 구동됩니다.
+기본 경로: `./data` (현재 작업 디렉토리 기준). **UTF-8 JSONL** 형식이며 각 줄은 독립 JSON 객체입니다.
 
-### 1. 거래 관리 (`add`, `list`, `search`, `update`, `delete`)
-* **거래 추가 (대화형 입력):**
-  ```bash
-  python -m budget_app add
-  ```
-* **거래 목록 조회 (최신순 정렬, 개수 제한 가능):**
-  ```bash
-  python -m budget_app list --limit 5
-  ```
-* **조건 검색 (기간, 카테고리, 타입, 키워드, 태그 복합 필터링):**
-  ```bash
-  python -m budget_app search --category food --type expense --from 2024-01-01 --to 2024-01-31
-  ```
-* **거래 수정:**
-  ```bash
-  python -m budget_app update --id TX-000001 --amount 18000 --memo "점심 (특식)"
-  ```
-* **거래 삭제:**
-  ```bash
-  python -m budget_app delete --id TX-000001
-  ```
+- `transactions.jsonl`: `id,type,date,amount,category,memo,tags` (선택적 `recurring_key`)
+- `categories.jsonl`: `name`
+- `budgets.jsonl`: `month,amount`
+- `recurring.jsonl`: `id,type,category,amount,day,start_month,memo,tags`
 
-### 2. 월별 요약 및 예산 관리 (`summary`, `budget`)
-* **월별 요약 및 예산 사용률 확인:**
-  ```bash
-  python -m budget_app summary --month 2024-01 --top 3
-  ```
-* **월 예산 설정:**
-  ```bash
-  python -m budget_app budget set --month 2024-01 --amount 500000
-  ```
+`id`는 새로운 거래에 대해 `TX-` + UUID4로 발급합니다. 기존 버전의 `TX-000001` 같은 ID와 데이터도 유지됩니다. 기존 세 개의 JSONL 파일은 **초기화 시 덮어쓰지 않습니다**. `recurring.jsonl`만 보너스 기능용으로 새로 추가합니다.
 
-### 3. 카테고리 관리 (`category`)
-* **카테고리 목록 조회:**
-  ```bash
-  python -m budget_app category list
-  ```
-* **카테고리 추가:**
-  ```bash
-  python -m budget_app category add
-  ```
-* **카테고리 삭제 (사용 중인 경우 대체 카테고리 마이그레이션 지원):**
-  ```bash
-  python -m budget_app category remove --name food --fallback etc
-  ```
+**기존 데이터를 대체하기 전에 `backup` 명령어를 먼저 실행하는 것을 권장합니다.** 동시 프로세스 쓰기는 지원하지 않습니다. 파일 손상 시 오류를 출력하며 임의로 건너뛰지 않습니다.
 
-### 4. 데이터 백업 및 복구 (`export`, `import`)
-* **CSV 내보내기 (UTF-8 인코딩, 스키마 준수):**
-  ```bash
-  python -m budget_app export --out backup.csv --month 2024-01
-  ```
-* **CSV 가져오기:**
-  ```bash
-  python -m budget_app import --from backup.csv
-  ```
+## CSV import/export 형식
 
----
+UTF-8, 헤더 필수. 열은 다음과 같습니다.
 
-## 🔍 평가 지표 검증 체크리스트
+| 컬럼 | 필수 | 내용 |
+|---|---|---|
+| date | Y | `YYYY-MM-DD` |
+| type | Y | `income` / `expense` |
+| category | Y | 등록된 카테고리 |
+| amount | Y | 양의 정수 |
+| memo | N | 텍스트 |
+| tags | N | 한 셀 안에 쉼표로 구분된 텍스트 (여러 태그를 CSV 따옴표로 감쌈) |
 
-1. **기능 완성도:** `add`, `list`, `search`, `summary`, `export`, `import`, `update`, `delete` 전 기능 정상 동작
-2. **영구 저장:** `./data/` 하위에 3개 이상의 저장 파일(`.jsonl`) 생성 및 프로그램 재실행 시 데이터 유지
-3. **카테고리 무결성:** 거래 내역에서 사용 중인 카테고리 삭제 시 대체 카테고리로 안전하게 마이그레이션 처리
-4. **예산 모니터링:** 월별 예산 설정 및 `summary` 실행 시 사용률(%), 예산 초과 경고 출력
-5. **CSV 표준 준수:** UTF-8 인코딩 및 명시된 헤더(`date,type,category,amount,memo,tags`) 스키마 보장
-6. **예외 견고성 및 종료 코드:** 잘못된 입력 시 스택트레이스 없이 오류 메시지와 해결 힌트를 출력하고, 비정상 종료 코드(`1`, 0이 아닌 값) 반환
+예시:
+
+```csv
+date,type,category,amount,memo,tags
+2026-11-18,expense,food,15000,점심,"meal,lunch"
+2026-11-19,income,salary,3000000,월급,salary
+```
+
+- `import`는 유효한 행만 저장하고 잘못된 행은 사유를 출력하며 `skipped`로 집계합니다. 필수 헤더가 누락되면 오류 종료합니다.
+- `export`는 `--month` 또는 `--from`/`--to` 중 하나 이상이 필요합니다. 날짜·월을 검증합니다.
+- `export`는 조건 일치 거래를 CSV로 내보냅니다. 같은 CSV를 여러 번 import하면 **별개 신규 거래**로 저장됩니다.
+- `recurring_key`는 CSV로 내보내지 않으므로 재가져온 내역은 일반 거래로 처리됩니다.
+
+## 스트리밍 및 안정성
+
+- `StorageRepository.stream_transactions()`는 `yield`로 파일을 한 줄씩 읽습니다.
+- `list --limit N`은 힙 기반으로 날짜 최신 N개만 보관합니다.
+- `search`는 최대 500건 단위로 디스크에 임시 정렬 파일을 생성한 뒤 병합하므로 전체 검색 결과를 한꺼번에 메모리에 적재하지 않습니다. 매우 많은 청크가 생기면 열린 파일 수에 따른 운영체제 한계가 있을 수 있습니다.
+- 거래 추가는 JSONL 끝에 append하며 매번 전체 재작성하지 않습니다.
+- 수정/삭제는 임시 파일 + `os.replace`로 재작성하며, 쓰기 중 오류 발생 시 원본을 보존합니다. 동시 접근/전원 손실까지 완전히 보호하는 데이터베이스 트랜잭션은 아닙니다.
+- 예외는 `handle_exceptions` 데코레이터에서 사용자 메시지로 처리하며, 정상 종료 `0`, 프로그램 오류 `1`, 잘못된 CLI 인자 `2`입니다.
+
+## 테스트
+
+```sh
+python -m unittest discover -s tests -v
+```
