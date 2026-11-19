@@ -1,1 +1,1 @@
-"""Console budget application."""
+# 패키지 형태 관례상 존재하는 파일, 삭제해도 무방함

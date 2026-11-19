@@ -14,7 +14,9 @@ from .validation import validate_month
 DEFAULT_CATEGORIES = ["food", "transport", "rent", "salary", "entertainment", "other"]
 
 
+# 파일 I/O 및 기능 
 class StorageRepository:
+    # 저장 폴더와 파일 경로 초기화
     def __init__(self, data_dir: str = "./data") -> None:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -24,12 +26,14 @@ class StorageRepository:
         self.recurring_file = self.data_dir / "recurring.jsonl"
         self._init_files()
 
+    # 저장 파일 준비 (생성)
     def _init_files(self) -> None:
         if not self.cat_file.exists():
             self.save_categories([Category(name=c) for c in DEFAULT_CATEGORIES])
         for path in (self.trans_file, self.budget_file, self.recurring_file):
             path.touch(exist_ok=True)
 
+    # JSONL 파일을 읽고 검수
     @staticmethod
     def _read_jsonl(path: Path) -> Iterator[dict]:
         with path.open("r", encoding="utf-8") as file:
@@ -44,6 +48,7 @@ class StorageRepository:
                 except (ValueError, TypeError) as error:
                     raise ValueError(f"{path.name} {line_number}행이 손상되었습니다: {error}") from error
 
+    # 임시 파일 작성 및 파일 교체
     def _atomic_write(self, path: Path, lines: Iterable[str]) -> None:
         temp_name: str | None = None
         try:
@@ -62,6 +67,7 @@ class StorageRepository:
             if temp_name and os.path.exists(temp_name):
                 os.unlink(temp_name)
 
+    # JSONL 파일 끝에 데이터 추가
     @staticmethod
     def _append_jsonl(path: Path, records: Iterable[dict]) -> int:
         count = 0
@@ -73,6 +79,7 @@ class StorageRepository:
             os.fsync(file.fileno())
         return count
 
+    # 거래 파일을 제너레이터 형식으로 객체 반환
     def stream_transactions(self) -> Iterator[Transaction]:
         with self.trans_file.open("r", encoding="utf-8") as file:
             for line_number, line in enumerate(file, start=1):
@@ -86,23 +93,29 @@ class StorageRepository:
                         f"transactions.jsonl {line_number}행이 잘못되었습니다: {error}"
                     ) from error
 
+    #  모든 거래를 리스트로 반환
     def get_all_transactions(self) -> list[Transaction]:
         return list(self.stream_transactions())
 
+    #  거래 한 건을 JSONL 파일에 추가
     def add_transaction(self, tx: Transaction) -> None:
         self._append_jsonl(self.trans_file, (tx.to_dict() for _ in range(1)))
 
+    # 거래 여러 건을 파일 끝으로 추가
     def add_transactions(self, transactions: Iterable[Transaction]) -> int:
         return self._append_jsonl(self.trans_file, (tx.to_dict() for tx in transactions))
 
+    # 전달 받은 거래들을 파일 전체에 다시 저장
     def save_all_transactions(self, transactions: Iterable[Transaction]) -> None:
         self._atomic_write(self.trans_file, (
             json.dumps(t.to_dict(), ensure_ascii=False) for t in transactions
         ))
 
+    # ID로 거래를 찾아 변경 및 삭제 후 파일 재작성
     def edit_transaction(self, tx_id: str, change: Callable[[Transaction], Transaction | None]) -> bool:
         found = False
 
+        # 제너레이터 형식으로 수정 결과를 한줄 씩 생성
         def updated_lines() -> Iterator[str]:
             nonlocal found
             for tx in self.stream_transactions():
@@ -118,6 +131,7 @@ class StorageRepository:
         self._atomic_write(self.trans_file, updated_lines())
         return found
 
+    # 저장된 카테고리 조회
     def get_categories(self) -> list[str]:
         categories: list[str] = []
         for data in self._read_jsonl(self.cat_file):
@@ -127,11 +141,13 @@ class StorageRepository:
             categories.append(name)
         return categories
 
+    # 카테고리 목록을 파일에 다시 저장
     def save_categories(self, categories: list[Category]) -> None:
         self._atomic_write(self.cat_file, (
             json.dumps({"name": c.name}, ensure_ascii=False) for c in categories
         ))
 
+    # 중복 여부 확인 후 카테고리 추가
     def add_category(self, name: str) -> bool:
         categories = self.get_categories()
         if name in categories:
@@ -140,6 +156,7 @@ class StorageRepository:
         self.save_categories([Category(name=c) for c in categories])
         return True
 
+    # 카테고리 존재 확인 후 삭제
     def remove_category(self, name: str) -> bool:
         categories = self.get_categories()
         if name not in categories:
@@ -148,6 +165,7 @@ class StorageRepository:
         self.save_categories([Category(name=c) for c in categories])
         return True
 
+    # 전체 월별 예산 읽기 (딕셔너리로)
     def get_budgets(self) -> dict[str, int]:
         budgets: dict[str, int] = {}
         for data in self._read_jsonl(self.budget_file):
@@ -158,6 +176,7 @@ class StorageRepository:
             budgets[month] = amount
         return budgets
 
+    # 특정 월의 예산을 저장하거나 변경
     def set_budget(self, month: str, amount: int) -> None:
         budgets = self.get_budgets()
         budgets[month] = amount
@@ -166,9 +185,11 @@ class StorageRepository:
             for m, a in sorted(budgets.items())
         ))
 
+    # 특정 월의 예산을 조회
     def get_budget(self, month: str) -> int | None:
         return self.get_budgets().get(month)
 
+    # 반복 규칙을 하나씩 조회
     def stream_recurring(self) -> Iterator[RecurringRule]:
         for data in self._read_jsonl(self.recurring_file):
             try:
@@ -176,9 +197,11 @@ class StorageRepository:
             except (TypeError, ValueError) as error:
                 raise ValueError(f"반복 규칙 파일이 잘못되었습니다: {error}") from error
 
+    # 새로운 반복 규칙 저장
     def add_recurring(self, rule: RecurringRule) -> None:
         self._append_jsonl(self.recurring_file, (asdict(rule),))
 
+    # 타임스탬프가 포함된 백업 폴더를 생성 하고 저장 파일 복사
     def backup(self) -> str:
         # 초 단위 중복 시에도 새 폴더를 생성함
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")

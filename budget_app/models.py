@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+#  개별 수입 및 지출 거래 데이터 구조 및 정의
 @dataclass
 class Transaction:
     id: str
@@ -53,11 +54,13 @@ class Transaction:
         )
 
 
+# 카페고리 이름 데이터 구조 및 정의
 @dataclass
 class Category:
     name: str
 
 
+#  매월 반복되는 거래 데이터 구조 및 정의 [보너스 - 2]
 @dataclass
 class RecurringRule:
     id: str

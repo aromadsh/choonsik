@@ -16,23 +16,24 @@ from .validation import positive_amount, positive_count, validate_date, validate
 
 CSV_COLUMNS = ["date", "type", "category", "amount", "memo", "tags"]
 
-
+# 거래의 날짜와 ID를 정렬 기준으로 변환
 def _date_order(tx: Transaction) -> tuple[str, str]:
     return (tx.date, tx.id)
 
-
+#  임시 JSONL 파일을 읽고 Transaction 객체를 순차 반환
 def _file_transactions(path: Path) -> Iterator[Transaction]:
     with path.open("r", encoding="utf-8") as file:
         for line in file:
             yield Transaction.from_dict(json.loads(line))
 
-
+# 거래를 일정 크기의 청크로 나눠서 절렬하고 병합
 def sort_transactions(source: Iterable[Transaction], chunk_size: int = 500) -> Iterator[Transaction]:
     """큰 검색 결과도 임시 JSONL 청크로 외부 정렬하여 메모리 사용 제한."""
     with tempfile.TemporaryDirectory(prefix="budget_sort_") as folder:
         files: list[Path] = []
         chunk: list[Transaction] = []
 
+        # 날짜를 역순으로정렬 후 다음 임시 파일로 저장
         def save_chunk() -> None:
             chunk.sort(key=_date_order, reverse=True)
             path = Path(folder) / f"chunk_{len(files)}.jsonl"
@@ -56,11 +57,13 @@ def sort_transactions(source: Iterable[Transaction], chunk_size: int = 500) -> I
             key=_date_order, reverse=True,
         )
 
-
+# 거래 추가/검색/수정/삭제/요약/예산 처리
 class BudgetService:
+    # StorageRepository 객체 생성
     def __init__(self, data_dir: str = "./data") -> None:
         self.repo = StorageRepository(data_dir)
 
+    # 날짜/거래타입/카테고리/금액 검증
     def _validated_fields(
         self, date: str, type_val: str, category: str, amount: int,
     ) -> None:
@@ -71,9 +74,11 @@ class BudgetService:
             raise ValueError(f"등록되지 않은 카테고리입니다: {category}. category list로 확인하세요.")
         positive_amount(amount)
 
+    # UUID 생성
     def generate_id(self) -> str:
         return "TX-" + uuid.uuid4().hex
 
+    # 데이터 검증하고 거래 객체 생성해서 파일로 저장
     def add_transaction(
         self, date: str, type_val: str, category: str, amount: int,
         memo: str = "", tags: list[str] | None = None,
@@ -87,10 +92,12 @@ class BudgetService:
         self.repo.add_transaction(tx)
         return tx.id
 
+    # 날짜 기준 최신 거래 조회
     def list_transactions(self, limit: int = 10) -> list[Transaction]:
         positive_count(limit, "--limit")
         return heapq.nlargest(limit, self.repo.stream_transactions(), key=_date_order)
 
+    # 날짜/카테고리/유형/메모/태그별 검색
     def search_transactions(
         self, from_date: str | None = None, to_date: str | None = None,
         category: str | None = None, type_val: str | None = None,
@@ -102,6 +109,7 @@ class BudgetService:
         if category is not None and category not in self.repo.get_categories():
             raise ValueError(f"등록되지 않은 카테고리입니다: {category}")
 
+        # 거래의 검색 조건을 검사 후 yield로 반환
         def matching() -> Iterator[Transaction]:
             for tx in self.repo.stream_transactions():
                 if from_date and tx.date < from_date:
@@ -120,6 +128,7 @@ class BudgetService:
 
         return sort_transactions(matching())
 
+    # 거래 ID로 대상을 찾고 지정한 필드만 수정
     def update_transaction(
         self, tx_id: str, date: str | None = None, type_val: str | None = None,
         category: str | None = None, amount: int | None = None,
@@ -134,6 +143,7 @@ class BudgetService:
         if amount is not None:
             positive_amount(amount)
 
+        # 기존 거래에서 수정
         def change(tx: Transaction) -> Transaction:
             values = {}
             for name, value in (
@@ -146,9 +156,11 @@ class BudgetService:
 
         return self.repo.edit_transaction(tx_id, change)
 
+    # 거래 ID에 해당하는 거래 삭제
     def delete_transaction(self, tx_id: str) -> bool:
         return self.repo.edit_transaction(tx_id, lambda tx: None)
 
+    # 총수입/총지출/잔액/카테고리별 TOP/예산 사용률 출력
     def summary(self, month: str, top_n: int = 3) -> None:
         validate_month(month)
         positive_count(top_n, "--top")
@@ -187,12 +199,14 @@ class BudgetService:
         if not expenses:
             print("지출 데이터 없음")
 
+    # 특정 월에 예산을 설정하고 저장
     def set_budget(self, month: str, amount: int) -> None:
         validate_month(month)
         if type(amount) is not int or amount < 0:
             raise ValueError("예산 금액은 0 이상의 정수여야 합니다.")
         self.repo.set_budget(month, amount)
 
+    # 카테고리 조회/추가/삭제/검수
     def manage_category(self, action: str, name: str | None = None) -> None:
         if action == "list":
             print("등록된 카테고리:")
@@ -220,6 +234,7 @@ class BudgetService:
         else:
             raise ValueError("지원하지 않는 category 명령어입니다.")
 
+    # 조건에 맞는 거래를 csv 파일로 생성
     def export_csv(
         self, out_path: str, month: str | None = None,
         from_date: str | None = None, to_date: str | None = None,
@@ -268,6 +283,7 @@ class BudgetService:
         print(f"[완료] {destination} ({count} records)")
         return count
 
+    # CSV 파일을 읽어 검증하고 거래로 등록
     def import_csv(self, in_path: str) -> tuple[int, int]:
         if not Path(in_path).is_file():
             raise FileNotFoundError(f"가져올 파일을 찾을 수 없습니다: {in_path}")
@@ -302,6 +318,7 @@ class BudgetService:
         print(f"[완료] imported={imported}, skipped={skipped}")
         return imported, skipped
 
+    # 월급/월세 같은 반복 규칙 등록
     def add_recurring(
         self, type_val: str, category: str, amount: int,
         day: int, start_month: str, memo: str = "", tags: list[str] | None = None,
@@ -321,9 +338,11 @@ class BudgetService:
         self.repo.add_recurring(rule)
         return rule.id
 
+    # 등록된 반복 규칙 조회
     def list_recurring(self) -> list[RecurringRule]:
         return list(self.repo.stream_recurring())
 
+    # 지정한 월의 반복 거래 생성 및 중복 방지
     def generate_recurring(self, month: str) -> tuple[int, int]:
         validate_month(month)
         existing = {tx.recurring_key for tx in self.repo.stream_transactions() if tx.recurring_key}
@@ -349,6 +368,7 @@ class BudgetService:
         print(f"[완료] generated={count}, skipped={skipped}")
         return count, skipped
 
+    # 백업
     def backup(self) -> str:
         directory = self.repo.backup()
         print(f"[백업 완료] 경로: {directory}")
