@@ -1,2 +1,0 @@
-{"id": "TX-f968676bf7e74c36b41ef477ea4b6451", "type": "income", "date": "2026-11-25", "amount": 30000, "category": "salary", "memo": "월급", "tags": ["salary"], "recurring_key": "RR-c5e9fba1b7e94e1a9ed30fed7c4feac4:2026-11"}
-{"id": "TX-f2180dff5e42432da83fa8fd47809868", "type": "expense", "date": "2026-11-30", "amount": 600000, "category": "rent", "memo": "월세", "tags": [], "recurring_key": "RR-968522cc90dd4727a8ccb39f1098e5fc:2026-11"}

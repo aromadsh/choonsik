@@ -1,2 +1,0 @@
-{"id": "RR-c5e9fba1b7e94e1a9ed30fed7c4feac4", "type": "income", "category": "salary", "amount": 30000, "day": 25, "start_month": "2026-11", "memo": "월급", "tags": ["salary"]}
-{"id": "RR-968522cc90dd4727a8ccb39f1098e5fc", "type": "expense", "category": "rent", "amount": 600000, "day": 31, "start_month": "2026-11", "memo": "월세", "tags": []}
