@@ -23,7 +23,7 @@ def _cell(value: object, width: int, right: bool = False) -> str:
     padding = " " * (width - _display_width(text))
     return padding + text if right else text + padding
 
-@log_execution
+# @log_execution
 def print_transactions(transactions: Iterable[Transaction]) -> int:
     headings = " | ".join(_cell(name, width) for name, width in COLUMNS)
     print(headings)
