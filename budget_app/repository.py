@@ -62,6 +62,22 @@ class StorageRepository:
                     temp.write(line + "\n")
                 temp.flush()
                 os.fsync(temp.fileno())
+
+            # # 임시 파일 저장 포인트
+            # history_dir = path.parent / "write_history"
+            # history_dir.mkdir(exist_ok=True)
+
+            # with tempfile.NamedTemporaryFile(
+            #     dir=history_dir,
+            #     prefix=f"{path.name}.",
+            #     suffix=".snapshot",
+            #     delete=False,
+            # ) as snapshot:
+            #     snapshot_path = Path(snapshot.name)
+
+            # shutil.copy2(temp_name, snapshot_path)
+            # print(f"[임시 파일 사본 보관] {snapshot_path}")
+
             os.replace(temp_name, path)
         finally:
             if temp_name and os.path.exists(temp_name):
