@@ -1,7 +1,7 @@
 import unicodedata
 from typing import Iterable
 from .models import Transaction
-
+from .decorators import log_execution
 
 COLUMNS = [("ID", 35), ("날짜", 10), ("유형", 7), ("카테고리", 14),
            ("금액", 13), ("메모", 20), ("태그", 18)]
@@ -23,7 +23,7 @@ def _cell(value: object, width: int, right: bool = False) -> str:
     padding = " " * (width - _display_width(text))
     return padding + text if right else text + padding
 
-
+@log_execution
 def print_transactions(transactions: Iterable[Transaction]) -> int:
     headings = " | ".join(_cell(name, width) for name, width in COLUMNS)
     print(headings)
