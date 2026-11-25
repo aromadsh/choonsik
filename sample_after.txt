@@ -1,0 +1,4 @@
+first line
+keep this
+new line
+final line

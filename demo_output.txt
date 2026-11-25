@@ -1,0 +1,46 @@
+Welcome to Mini Git! Type HELP for commands; EXIT or QUIT to close.
+mini-git> Initialized repository.
+Current branch: main
+Current user: Alice
+mini-git> [main 8b0962c9f757] Initial commit
+mini-git> Created branch: feature
+mini-git> Switched to branch: feature
+mini-git> [feature 9b9efc7927c0] Add login feature
+mini-git> Switched to branch: main
+mini-git> [main 004b0ca1d487] Add payment feature
+mini-git> [main 20f73858257e] Merge branch 'feature' into main
+mini-git> commit 8b0962c9f757 (Alice, 2026-11-25 12:46:06)
+Initial commit
+commit 004b0ca1d487 (Alice, 2026-11-25 12:46:06)
+Add payment feature
+commit 9b9efc7927c0 (Alice, 2026-11-25 12:46:06) [feature]
+Add login feature
+commit 20f73858257e (Alice, 2026-11-25 12:46:06) [main]
+Merge branch 'feature' into main
+mini-git> Found 1 commit(s):
+- 9b9efc7927c0 (Alice): Add login feature
+mini-git> Found 4 commit(s):
+- 8b0962c9f757 (Alice): Initial commit
+- 9b9efc7927c0 (Alice): Add login feature
+- 004b0ca1d487 (Alice): Add payment feature
+- 20f73858257e (Alice): Merge branch 'feature' into main
+mini-git> commit 004b0ca1d487 (Alice, 2026-11-25 12:46:06)
+Add payment feature
+commit 20f73858257e (Alice, 2026-11-25 12:46:06) [main]
+Merge branch 'feature' into main
+commit 8b0962c9f757 (Alice, 2026-11-25 12:46:06)
+Initial commit
+commit 9b9efc7927c0 (Alice, 2026-11-25 12:46:06) [feature]
+Add login feature
+mini-git> Diff ('  ' unchanged, '- ' removed, '+ ' added):
+  first line
+  keep this
+- old line
++ new line
+  final line
+mini-git> N | Merge(ms) | Insertion(ms) | Equal
+100 | 0.086 | 0.448 | True
+500 | 0.462 | 11.320 | True
+1000 | 1.000 | 48.845 | True
+2000 | 2.363 | 197.446 | True
+mini-git> Goodbye!
